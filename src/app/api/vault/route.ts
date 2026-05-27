@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { parseVaultEntry, writeVaultEntry } from "@/lib/vault";
+import { loadConfig } from "@/lib/config.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await writeVaultEntry(parsed);
+    const { vault } = loadConfig();
+    const result = await writeVaultEntry(parsed, vault.path, vault.folder);
     return Response.json({ ok: true, ...result });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);

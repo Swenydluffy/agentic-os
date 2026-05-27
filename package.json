@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "setup": "tsx scripts/setup.ts --force",
+    "predev": "tsx scripts/setup.ts",
     "dev": "next dev",
+    "prestart": "tsx scripts/setup.ts",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test": "tsx scripts/test-vault.ts && tsx scripts/test-setup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.99.0",
@@ -23,6 +27,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }

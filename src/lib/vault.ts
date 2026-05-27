@@ -76,28 +76,11 @@ export interface VaultWriteResult {
   created: boolean;
 }
 
-export interface VaultConfig {
-  root: string;
-  folder: string;
-}
-
-/** Default vault location — overridable via env for testing or relocation. */
-const DEFAULT_VAULT_ROOT = "/Users/lucyanne/Documents/Omi";
-const DEFAULT_FOLDER = "Agentic OS";
-
 const SUBFOLDER: Record<VaultEntryType, string> = {
   chat: "Chats",
   goal: "Goals",
   journal: "Journal",
 };
-
-/** Resolve the vault config at call time so env overrides always apply. */
-export function getVaultConfig(): VaultConfig {
-  return {
-    root: process.env.OBSIDIAN_VAULT_PATH?.trim() || DEFAULT_VAULT_ROOT,
-    folder: process.env.AGENTIC_OS_FOLDER?.trim() || DEFAULT_FOLDER,
-  };
-}
 
 /** Lowercase, hyphenated tag value (e.g. "Sentinel" -> "sentinel"). */
 export function slugifyTag(name: string): string {
@@ -215,19 +198,23 @@ async function fileExists(p: string): Promise<boolean> {
 /**
  * Write one entry to the vault. Creates the folder and daily file as needed.
  * Chats append; goals and journals replace the day's file with the current state.
+ *
+ * The vault location is passed in (resolved from config by the caller) so this
+ * module stays free of config/fs-config dependencies and remains directly testable.
  */
 export async function writeVaultEntry(
   entry: VaultEntryInput,
+  vaultRoot: string,
+  vaultFolder: string,
 ): Promise<VaultWriteResult> {
-  const cfg = getVaultConfig();
   const date = new Date(entry.timestamp ?? Date.now());
   const dateStamp = localDateStamp(date);
 
   const subfolder = SUBFOLDER[entry.type];
-  const dir = join(cfg.root, cfg.folder, subfolder);
+  const dir = join(vaultRoot, vaultFolder, subfolder);
   const fileName = fileNameFor(entry, dateStamp);
   const absPath = join(dir, fileName);
-  const relativePath = join(cfg.folder, subfolder, fileName);
+  const relativePath = join(vaultFolder, subfolder, fileName);
 
   await mkdir(dir, { recursive: true });
 

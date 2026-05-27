@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
+import { loadConfig } from "@/lib/config.server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = new Anthropic({ apiKey });
-    const model = body.model ?? "claude-sonnet-4-6";
+    const model = body.model ?? loadConfig().models.sonnet;
 
     const stream = await client.messages.stream({
       model,

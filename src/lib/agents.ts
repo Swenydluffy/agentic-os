@@ -11,6 +11,7 @@ import {
   Database,
   Radar,
 } from "lucide-react";
+import { MODELS } from "./config";
 
 export type AgentStatus = "online" | "thinking" | "idle" | "offline" | "error";
 
@@ -51,9 +52,9 @@ export type AgentSnapshot = AgentSystem & {
   load: number; // 0..1
 };
 
-const OPUS = "claude-opus-4-7";
-const SONNET = "claude-sonnet-4-6";
-const HAIKU = "claude-haiku-4-5-20251001";
+const OPUS = MODELS.opus;
+const SONNET = MODELS.sonnet;
+const HAIKU = MODELS.haiku;
 
 export const AGENTS: AgentSystem[] = [
   {
