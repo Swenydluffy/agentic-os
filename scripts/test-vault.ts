@@ -12,6 +12,7 @@ import { join } from "node:path";
 import assert from "node:assert/strict";
 import {
   writeVaultEntry,
+  writeGuide,
   parseVaultEntry,
   localDateStamp,
   type VaultParseError,
@@ -155,6 +156,18 @@ async function isolatedTests(): Promise<void> {
   assert.ok(journalContent.includes("Edited entry — final version."), "edited body missing");
   assert.ok(!journalContent.includes("First draft of the day."), "old body must be replaced");
   ok("journal writes one editable file per day (replace)");
+
+  // --- guide: written to Agentic OS/Guide.md, covers every feature ---
+  const guideSource = await readFile(join(process.cwd(), "src", "content", "guide.md"), "utf8");
+  const guide = await writeGuide(guideSource, root, FOLDER);
+  assert.equal(guide.relativePath, join(FOLDER, "Guide.md"), "guide path");
+  const guideContent = await readFile(guide.path, "utf8");
+  assert.ok(/^\s*-\s*guide$/m.test(guideContent), "guide tag missing");
+  assert.ok(guideContent.includes("# 🚀 Build Your Own Agentic OS"), "guide title missing");
+  for (const topic of ["Dashboard", "Voice", "Obsidian", "Goals", "Journal", "Portable"]) {
+    assert.ok(new RegExp(topic, "i").test(guideContent), `guide should cover: ${topic}`);
+  }
+  ok("guide writes to Agentic OS/Guide.md and covers all features");
 
   // --- input validation at the boundary ---
   assert.ok("error" in (parseVaultEntry(null) as VaultParseError), "null should be rejected");

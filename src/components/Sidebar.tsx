@@ -12,6 +12,7 @@ import {
   Boxes,
   Target,
   NotebookPen,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ const NAV = [
   { id: "chat", label: "Claude Console", icon: MessageSquare },
   { id: "goals", label: "Goals", icon: Target },
   { id: "journal", label: "Journal", icon: NotebookPen },
+  { id: "guide", label: "Guide", icon: BookOpen },
   { id: "workflows", label: "Workflows", icon: Workflow },
   { id: "telemetry", label: "Telemetry", icon: Radio },
   { id: "memory", label: "Memory", icon: Boxes },

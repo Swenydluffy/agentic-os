@@ -237,6 +237,38 @@ export async function writeVaultEntry(
   return { path: absPath, relativePath, created: !existed };
 }
 
+/**
+ * Write the guide to `<vault>/<folder>/Guide.md` (overwrite), prepending
+ * Obsidian frontmatter with #agentic-os #guide tags.
+ */
+export async function writeGuide(
+  markdown: string,
+  vaultRoot: string,
+  vaultFolder: string,
+): Promise<VaultWriteResult> {
+  const dir = join(vaultRoot, vaultFolder);
+  const absPath = join(dir, "Guide.md");
+  const relativePath = join(vaultFolder, "Guide.md");
+
+  await mkdir(dir, { recursive: true });
+
+  const frontmatter = [
+    "---",
+    `updated: ${new Date().toISOString()}`,
+    "tags:",
+    "  - agentic-os",
+    "  - guide",
+    "type: guide",
+    "---",
+    "",
+    "",
+  ].join("\n");
+
+  const existed = await fileExists(absPath);
+  await writeFile(absPath, frontmatter + markdown.trim() + "\n", "utf8");
+  return { path: absPath, relativePath, created: !existed };
+}
+
 export interface VaultParseError {
   error: string;
 }
