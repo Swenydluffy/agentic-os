@@ -2,14 +2,34 @@
  * Obsidian vault persistence (server-only — uses node:fs).
  *
  * Writes chats, goals, and journal entries into an "Agentic OS" folder inside
- * the user's vault as Markdown. One file per day per agent (chats) or per day
- * (goals/journal); new exchanges append to the existing daily file. The target
- * folder is created automatically.
+ * the user's vault as Markdown. The target folder is created automatically.
+ *
+ * Write strategies differ by type:
+ *  - chat    → APPEND: one file per day per agent; each exchange is appended.
+ *  - goal    → REPLACE: one file per day rewritten as a checkbox task list
+ *              reflecting the current goal set (so checking/editing stays in sync).
+ *  - journal → REPLACE: one editable file per day holding the day's entry.
  *
  * This module has no Next.js dependencies so it can be unit-tested directly.
  */
 import { mkdir, writeFile, appendFile, access } from "node:fs/promises";
 import { join } from "node:path";
+
+// Date helpers are kept inline (not imported from ./date) so this server module
+// stays self-contained and runnable directly by Node — see scripts/test-vault.ts.
+// The client mirror lives in ./date.ts for use in browser components.
+function pad(n: number): string {
+  return n.toString().padStart(2, "0");
+}
+
+/** Local date as YYYY-MM-DD, so "daily" tracks the user's day, not UTC. */
+export function localDateStamp(d: Date = new Date()): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function localTimeStamp(d: Date): string {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
 
 export type VaultEntryType = "chat" | "goal" | "journal";
 
@@ -23,31 +43,34 @@ export interface ChatExchangeInput {
   timestamp?: number;
 }
 
-export interface GoalEntryInput {
+export interface GoalItem {
+  text: string;
+  done: boolean;
+}
+
+export interface GoalSnapshotInput {
   type: "goal";
-  title: string;
-  details?: string;
-  status?: string;
+  /** The full current goal list — written as a Markdown checkbox task list. */
+  goals: GoalItem[];
   timestamp?: number;
 }
 
 export interface JournalEntryInput {
   type: "journal";
-  title?: string;
+  /** The full text of the day's entry. */
   body: string;
-  mood?: string;
   timestamp?: number;
 }
 
 export type VaultEntryInput =
   | ChatExchangeInput
-  | GoalEntryInput
+  | GoalSnapshotInput
   | JournalEntryInput;
 
 export interface VaultWriteResult {
   /** Absolute path of the file written. */
   path: string;
-  /** Path relative to the vault root (e.g. "Agentic OS/Chats/Coder - 2026-05-27.md"). */
+  /** Path relative to the vault root (e.g. "Agentic OS/Goals/Goals - 2026-05-27.md"). */
   relativePath: string;
   /** True if the file was created by this write, false if it already existed. */
   created: boolean;
@@ -74,19 +97,6 @@ export function getVaultConfig(): VaultConfig {
     root: process.env.OBSIDIAN_VAULT_PATH?.trim() || DEFAULT_VAULT_ROOT,
     folder: process.env.AGENTIC_OS_FOLDER?.trim() || DEFAULT_FOLDER,
   };
-}
-
-function pad(n: number): string {
-  return n.toString().padStart(2, "0");
-}
-
-/** Local calendar date, so "daily" tracks the user's day, not UTC. */
-export function localDateStamp(d: Date): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function localTimeStamp(d: Date): string {
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 /** Lowercase, hyphenated tag value (e.g. "Sentinel" -> "sentinel"). */
@@ -125,59 +135,72 @@ function tagsFor(entry: VaultEntryInput): string[] {
   return tags;
 }
 
-/** YAML frontmatter + H1 title, written exactly once when the file is created. */
-function header(entry: VaultEntryInput, date: Date, dateStamp: string): string {
-  const lines: string[] = [
+function frontmatterLines(
+  entry: VaultEntryInput,
+  dateField: "created" | "updated",
+  date: Date,
+): string[] {
+  return [
     "---",
-    `created: ${date.toISOString()}`,
+    `${dateField}: ${date.toISOString()}`,
     "tags:",
     ...tagsFor(entry).map((t) => `  - ${t}`),
     `type: ${entry.type}`,
   ];
-  if (entry.type === "chat") lines.push(`agent: ${entry.agentName}`);
-  lines.push("---", "");
-
-  const title =
-    entry.type === "chat"
-      ? `# Chat · ${entry.agentName} · ${dateStamp}`
-      : entry.type === "goal"
-        ? `# Goals · ${dateStamp}`
-        : `# Journal · ${dateStamp}`;
-  lines.push(title, "", "");
-  return lines.join("\n");
 }
 
-/** The markdown block appended for a single entry/exchange. */
-function entryBlock(entry: VaultEntryInput, date: Date): string {
-  const time = localTimeStamp(date);
-  switch (entry.type) {
-    case "chat":
-      return [
-        `## ${time}`,
-        "",
-        `**You:** ${entry.userMessage.trim()}`,
-        "",
-        `**${entry.agentName}:** ${entry.assistantMessage.trim()}`,
-        "",
-        "",
-      ].join("\n");
-    case "goal": {
-      const parts = [`## ${time} · ${entry.title.trim()}`, ""];
-      if (entry.status?.trim()) parts.push(`- **Status:** ${entry.status.trim()}`, "");
-      if (entry.details?.trim()) parts.push(entry.details.trim(), "");
-      parts.push("");
-      return parts.join("\n");
+/** Chat header (frontmatter + title), written once when the daily file is created. */
+function chatHeader(entry: ChatExchangeInput, date: Date, dateStamp: string): string {
+  return [
+    ...frontmatterLines(entry, "created", date),
+    `agent: ${entry.agentName}`,
+    "---",
+    "",
+    `# Chat · ${entry.agentName} · ${dateStamp}`,
+    "",
+    "",
+  ].join("\n");
+}
+
+/** The markdown block appended for a single chat exchange. */
+function chatBlock(entry: ChatExchangeInput, date: Date): string {
+  return [
+    `## ${localTimeStamp(date)}`,
+    "",
+    `**You:** ${entry.userMessage.trim()}`,
+    "",
+    `**${entry.agentName}:** ${entry.assistantMessage.trim()}`,
+    "",
+    "",
+  ].join("\n");
+}
+
+/** Full-file rendering for goal/journal snapshots (replace mode). */
+function renderSnapshot(
+  entry: GoalSnapshotInput | JournalEntryInput,
+  date: Date,
+  dateStamp: string,
+): string {
+  const lines = [...frontmatterLines(entry, "updated", date), "---", ""];
+
+  if (entry.type === "goal") {
+    lines.push(`# Goals · ${dateStamp}`, "");
+    const items = entry.goals.filter((g) => g.text.trim().length > 0);
+    if (items.length === 0) {
+      lines.push("_No goals yet._", "");
+    } else {
+      for (const g of items) {
+        lines.push(`- [${g.done ? "x" : " "}] ${g.text.trim()}`);
+      }
+      lines.push("");
     }
-    case "journal": {
-      const heading = entry.title?.trim()
-        ? `## ${time} · ${entry.title.trim()}`
-        : `## ${time}`;
-      const parts = [heading, ""];
-      if (entry.mood?.trim()) parts.push(`> Mood: ${entry.mood.trim()}`, "");
-      parts.push(entry.body.trim(), "", "");
-      return parts.join("\n");
-    }
+  } else {
+    lines.push(`# Journal · ${dateStamp}`, "");
+    const body = entry.body.trim();
+    lines.push(body.length > 0 ? body : "_Empty entry._", "");
   }
+
+  return lines.join("\n");
 }
 
 async function fileExists(p: string): Promise<boolean> {
@@ -190,8 +213,8 @@ async function fileExists(p: string): Promise<boolean> {
 }
 
 /**
- * Write one entry to the vault. Creates the folder and daily file if missing,
- * writes the header once (race-safe via the "wx" flag), then appends the entry.
+ * Write one entry to the vault. Creates the folder and daily file as needed.
+ * Chats append; goals and journals replace the day's file with the current state.
  */
 export async function writeVaultEntry(
   entry: VaultEntryInput,
@@ -208,17 +231,23 @@ export async function writeVaultEntry(
 
   await mkdir(dir, { recursive: true });
 
-  let created = false;
-  try {
-    // "wx" => create only if it doesn't exist, so the header is never duplicated.
-    await writeFile(absPath, header(entry, date, dateStamp), { flag: "wx" });
-    created = true;
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+  if (entry.type === "chat") {
+    let created = false;
+    try {
+      // "wx" => create only if absent, so the header is never duplicated.
+      await writeFile(absPath, chatHeader(entry, date, dateStamp), { flag: "wx" });
+      created = true;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
+    }
+    await appendFile(absPath, chatBlock(entry, date), "utf8");
+    return { path: absPath, relativePath, created };
   }
 
-  await appendFile(absPath, entryBlock(entry, date), "utf8");
-  return { path: absPath, relativePath, created };
+  // goal + journal: rewrite the day's file with the current snapshot.
+  const existed = await fileExists(absPath);
+  await writeFile(absPath, renderSnapshot(entry, date, dateStamp), "utf8");
+  return { path: absPath, relativePath, created: !existed };
 }
 
 export interface VaultParseError {
@@ -254,24 +283,19 @@ export function parseVaultEntry(raw: unknown): VaultEntryInput | VaultParseError
       };
     }
     case "goal": {
-      if (!isNonEmptyString(o.title)) return { error: "goal requires a non-empty title" };
-      return {
-        type: "goal",
-        title: o.title,
-        details: typeof o.details === "string" ? o.details : undefined,
-        status: typeof o.status === "string" ? o.status : undefined,
-        timestamp,
-      };
+      if (!Array.isArray(o.goals)) return { error: "goal requires a goals array" };
+      const goals: GoalItem[] = [];
+      for (const item of o.goals) {
+        if (typeof item !== "object" || item === null) return { error: "each goal must be an object" };
+        const g = item as Record<string, unknown>;
+        if (typeof g.text !== "string") return { error: "each goal requires a text string" };
+        goals.push({ text: g.text, done: g.done === true });
+      }
+      return { type: "goal", goals, timestamp };
     }
     case "journal": {
-      if (!isNonEmptyString(o.body)) return { error: "journal requires a non-empty body" };
-      return {
-        type: "journal",
-        title: typeof o.title === "string" ? o.title : undefined,
-        body: o.body,
-        mood: typeof o.mood === "string" ? o.mood : undefined,
-        timestamp,
-      };
+      if (typeof o.body !== "string") return { error: "journal requires a body string" };
+      return { type: "journal", body: o.body, timestamp };
     }
     default:
       return { error: `Unknown or missing entry type: ${String(o.type)}` };

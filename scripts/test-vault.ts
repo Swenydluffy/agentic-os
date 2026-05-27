@@ -104,36 +104,64 @@ async function isolatedTests(): Promise<void> {
   assert.ok(content.includes("**You:** Now add tests."), "user msg 2 missing");
   ok("both exchanges saved with timestamps");
 
-  // --- goal + journal supported ---
-  const goal = await writeVaultEntry({
+  // --- goal: checkbox task list, replace semantics ---
+  const goal1 = await writeVaultEntry({
     type: "goal",
-    title: "Ship vault sync",
-    status: "in-progress",
-    details: "Wire chats, then goals.",
+    goals: [
+      { text: "Ship vault sync", done: true },
+      { text: "Build the Goals page", done: false },
+    ],
     timestamp: ts1,
   });
-  assert.ok(goal.relativePath.includes(join("Goals", `Goals - ${dateStamp}.md`)), "goal path");
-  const goalContent = await readFile(goal.path, "utf8");
+  assert.ok(goal1.relativePath.includes(join("Goals", `Goals - ${dateStamp}.md`)), "goal path");
+  assert.equal(goal1.created, true, "first goal write should create the file");
+  let goalContent = await readFile(goal1.path, "utf8");
   assert.ok(/^\s*-\s*goal$/m.test(goalContent), "goal tag missing");
-  assert.ok(goalContent.includes("Ship vault sync"), "goal title missing");
-  ok("goal entries write to Agentic OS/Goals");
+  assert.ok(goalContent.includes("- [x] Ship vault sync"), "checked goal missing");
+  assert.ok(goalContent.includes("- [ ] Build the Goals page"), "unchecked goal missing");
+  ok("goals render as a checkbox task list (#agentic-os #goal)");
 
-  const journal = await writeVaultEntry({
+  const goal2 = await writeVaultEntry({
+    type: "goal",
+    goals: [{ text: "Only goal now", done: false }],
+    timestamp: ts2,
+  });
+  assert.equal(goal2.created, false, "second goal write should replace, not recreate");
+  goalContent = await readFile(goal2.path, "utf8");
+  assert.ok(goalContent.includes("- [ ] Only goal now"), "new goal missing");
+  assert.ok(!goalContent.includes("Ship vault sync"), "old goals must be replaced, not appended");
+  assert.equal((goalContent.match(/^type: goal$/gm) ?? []).length, 1, "exactly one header after replace");
+  ok("goal file reflects current state (replace, no duplication)");
+
+  // --- journal: one editable file per day, replace semantics ---
+  const j1 = await writeVaultEntry({
     type: "journal",
-    body: "Made real progress on persistence today.",
-    mood: "focused",
+    body: "First draft of the day.",
     timestamp: ts1,
   });
-  assert.ok(journal.relativePath.includes(join("Journal", `Journal - ${dateStamp}.md`)), "journal path");
-  const journalContent = await readFile(journal.path, "utf8");
+  assert.ok(j1.relativePath.includes(join("Journal", `Journal - ${dateStamp}.md`)), "journal path");
+  let journalContent = await readFile(j1.path, "utf8");
   assert.ok(/^\s*-\s*journal$/m.test(journalContent), "journal tag missing");
-  assert.ok(journalContent.includes("Made real progress"), "journal body missing");
-  ok("journal entries write to Agentic OS/Journal");
+  assert.ok(journalContent.includes("First draft of the day."), "journal body missing");
+
+  const j2 = await writeVaultEntry({
+    type: "journal",
+    body: "Edited entry — final version.",
+    timestamp: ts2,
+  });
+  assert.equal(j2.path, j1.path, "same day must resolve to the same journal file");
+  journalContent = await readFile(j2.path, "utf8");
+  assert.ok(journalContent.includes("Edited entry — final version."), "edited body missing");
+  assert.ok(!journalContent.includes("First draft of the day."), "old body must be replaced");
+  ok("journal writes one editable file per day (replace)");
 
   // --- input validation at the boundary ---
   assert.ok("error" in (parseVaultEntry(null) as VaultParseError), "null should be rejected");
-  assert.ok("error" in (parseVaultEntry({ type: "chat" }) as VaultParseError), "missing fields rejected");
+  assert.ok("error" in (parseVaultEntry({ type: "chat" }) as VaultParseError), "missing chat fields rejected");
+  assert.ok("error" in (parseVaultEntry({ type: "goal" }) as VaultParseError), "goal without goals array rejected");
+  assert.ok("error" in (parseVaultEntry({ type: "journal" }) as VaultParseError), "journal without body rejected");
   assert.ok("error" in (parseVaultEntry({ type: "nope" }) as VaultParseError), "unknown type rejected");
+  assert.ok(!("error" in parseVaultEntry({ type: "goal", goals: [{ text: "x", done: true }] })), "valid goal accepted");
   assert.ok(!("error" in parseVaultEntry({ type: "journal", body: "hi" })), "valid journal accepted");
   ok("parseVaultEntry validates untrusted input");
 

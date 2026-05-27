@@ -10,6 +10,8 @@ import {
   Workflow,
   Radio,
   Boxes,
+  Target,
+  NotebookPen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,6 +19,8 @@ const NAV = [
   { id: "mission", label: "Mission Control", icon: LayoutGrid },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "chat", label: "Claude Console", icon: MessageSquare },
+  { id: "goals", label: "Goals", icon: Target },
+  { id: "journal", label: "Journal", icon: NotebookPen },
   { id: "workflows", label: "Workflows", icon: Workflow },
   { id: "telemetry", label: "Telemetry", icon: Radio },
   { id: "memory", label: "Memory", icon: Boxes },

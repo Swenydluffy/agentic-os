@@ -1,33 +1,56 @@
 "use client";
 
-import type { VaultEntryInput } from "./vault";
+import type { GoalItem, VaultEntryInput } from "./vault";
 
-/**
- * Persist an entry to the Obsidian vault via the API. Fire-and-forget: vault
- * failures are logged but never surface to the user or interrupt chat UX.
- */
-export async function saveToVault(entry: VaultEntryInput): Promise<void> {
+export type VaultSaveResult =
+  | { ok: true; relativePath: string }
+  | { ok: false; error: string };
+
+/** POST an entry to the vault API and report success/failure to the caller. */
+export async function postVault(entry: VaultEntryInput): Promise<VaultSaveResult> {
   try {
     const res = await fetch("/api/vault", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entry),
     });
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.error(`[vault] save failed (${res.status}): ${detail}`);
+    const data: unknown = await res.json().catch(() => null);
+    const obj = data && typeof data === "object" ? (data as Record<string, unknown>) : null;
+
+    if (!res.ok || !obj || obj.ok !== true) {
+      const error = obj && typeof obj.error === "string" ? obj.error : `HTTP ${res.status}`;
+      return { ok: false, error };
     }
+    return {
+      ok: true,
+      relativePath: typeof obj.relativePath === "string" ? obj.relativePath : "",
+    };
   } catch (e) {
-    console.error("[vault] save error:", e);
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
-/** Convenience wrapper for the common case: a completed chat exchange. */
+/** Persist the full current goal list as a checkbox task list. */
+export function saveGoals(goals: GoalItem[]): Promise<VaultSaveResult> {
+  return postVault({ type: "goal", goals });
+}
+
+/** Persist the day's journal entry. */
+export function saveJournal(body: string): Promise<VaultSaveResult> {
+  return postVault({ type: "journal", body });
+}
+
+/**
+ * Fire-and-forget persistence of a completed chat exchange. Vault failures are
+ * logged but never surface to the user or interrupt chat UX.
+ */
 export function saveChatExchange(args: {
   agentName: string;
   userMessage: string;
   assistantMessage: string;
   timestamp?: number;
 }): void {
-  void saveToVault({ type: "chat", ...args });
+  void postVault({ type: "chat", ...args }).then((r) => {
+    if (!r.ok) console.error("[vault] chat save failed:", r.error);
+  });
 }

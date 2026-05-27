@@ -9,6 +9,8 @@ import { StatTile } from "@/components/StatTile";
 import { AgentGrid } from "@/components/AgentGrid";
 import { ChatPanel } from "@/components/ChatPanel";
 import { AgentChat } from "@/components/AgentChat";
+import { GoalsPanel } from "@/components/GoalsPanel";
+import { JournalPanel } from "@/components/JournalPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -54,8 +56,14 @@ export default function Page() {
     []
   );
 
-  const view: "console" | "dashboard" =
-    activeNav === "agents" || activeNav === "chat" ? "console" : "dashboard";
+  const view: "console" | "goals" | "journal" | "dashboard" =
+    activeNav === "agents" || activeNav === "chat"
+      ? "console"
+      : activeNav === "goals"
+        ? "goals"
+        : activeNav === "journal"
+          ? "journal"
+          : "dashboard";
 
   function openAgent(id: string) {
     setSelectedAgent(id);
@@ -73,6 +81,14 @@ export default function Page() {
           {/* Console stays mounted so conversations survive view switches. */}
           <div className={view === "console" ? "h-full p-4 lg:p-6" : "hidden"}>
             <AgentChat initialAgentId={selectedAgent} />
+          </div>
+
+          {/* Goals & Journal stay mounted so unsaved input survives nav switches. */}
+          <div className={view === "goals" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <GoalsPanel />
+          </div>
+          <div className={view === "journal" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <JournalPanel />
           </div>
 
           <div className={view === "dashboard" ? "h-full" : "hidden"}>
