@@ -6,6 +6,8 @@ import { Send, StopCircle, Zap, User, AlertTriangle, PlugZap } from "lucide-reac
 import { MicButton } from "./MicButton";
 import { saveChatExchange } from "@/lib/vault-client";
 import { cn } from "@/lib/utils";
+import { useSpeechSynthesis, useAutoSpeak } from "@/lib/useSpeechSynthesis";
+import { SpeakButton, AutoSpeakToggle } from "./SpeakButton";
 
 /**
  * Master switch for the Hermes chat composer. Left OFF for now — the panel shows
@@ -49,6 +51,11 @@ export function HermesPanel() {
   const [streaming, setStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const tts = useSpeechSynthesis();
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  const autoSpeakRef = useRef(autoSpeak);
+  autoSpeakRef.current = autoSpeak;
 
   // Poll real connection status.
   useEffect(() => {
@@ -105,6 +112,7 @@ export function HermesPanel() {
         assistantText = data.reply;
         const reply = data.reply;
         setMessages((m) => m.map((x) => (x.id === assistantId ? { ...x, content: reply } : x)));
+        if (autoSpeakRef.current) tts.speak(assistantId, reply);
       } else {
         const errText = data?.error ?? `Hermes request failed (HTTP ${res.status})`;
         setMessages((m) =>
@@ -149,7 +157,10 @@ export function HermesPanel() {
             <p className="text-xs text-[var(--color-ink-dim)]">Live external agent · full tool access</p>
           </div>
         </div>
-        <StatusPill status={status} />
+        <div className="flex items-center gap-2">
+          <AutoSpeakToggle enabled={autoSpeak} onToggle={() => setAutoSpeak(!autoSpeak)} supported={tts.isSupported} />
+          <StatusPill status={status} />
+        </div>
       </header>
 
       {offline && (
@@ -210,6 +221,11 @@ export function HermesPanel() {
                       </span>
                     )}
                   </div>
+                  {m.role === "assistant" && m.content && (
+                    <div className="flex items-end pb-0.5">
+                      <SpeakButton id={m.id} text={m.content} controller={tts} accent="var(--color-amber)" />
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </AnimatePresence>

@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { MicButton } from "./MicButton";
 import { getAgent } from "@/lib/agents";
 import { saveChatExchange } from "@/lib/vault-client";
+import { useSpeechSynthesis, useAutoSpeak } from "@/lib/useSpeechSynthesis";
+import { SpeakButton, AutoSpeakToggle } from "./SpeakButton";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };
 
@@ -30,6 +32,11 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const tts = useSpeechSynthesis();
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  const autoSpeakRef = useRef(autoSpeak);
+  autoSpeakRef.current = autoSpeak;
+
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -50,6 +57,7 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
     abortRef.current = ac;
 
     let assistantText = "";
+    let completed = false;
 
     try {
       const res = await fetch("/api/chat", {
@@ -76,6 +84,7 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
           )
         );
       }
+      completed = true;
     } catch (e: unknown) {
       if ((e as Error).name === "AbortError") {
         // graceful stop
@@ -102,6 +111,7 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
           userMessage: content,
           assistantMessage: assistantText,
         });
+        if (completed && autoSpeakRef.current) tts.speak(assistantId, assistantText);
       }
     }
   }
@@ -133,9 +143,12 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
             </p>
           </div>
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-ink-faint)]">
-          model · sonnet 4.6
-        </span>
+        <div className="flex items-center gap-2">
+          <AutoSpeakToggle enabled={autoSpeak} onToggle={() => setAutoSpeak(!autoSpeak)} supported={tts.isSupported} />
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-ink-faint)] sm:inline">
+            model · sonnet 4.6
+          </span>
+        </div>
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
@@ -175,6 +188,11 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
                   )}
                 </p>
               </div>
+              {m.role === "assistant" && m.content && (
+                <div className="flex items-end pb-0.5">
+                  <SpeakButton id={m.id} text={m.content} controller={tts} accent="var(--color-violet)" />
+                </div>
+              )}
             </motion.div>
           ))}
         </AnimatePresence>

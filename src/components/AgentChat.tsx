@@ -8,6 +8,8 @@ import { AgentAvatar } from "./AgentAvatar";
 import { MicButton } from "./MicButton";
 import { cn } from "@/lib/utils";
 import { saveChatExchange } from "@/lib/vault-client";
+import { useSpeechSynthesis, useAutoSpeak } from "@/lib/useSpeechSynthesis";
+import { SpeakButton, AutoSpeakToggle } from "./SpeakButton";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string; ts: number };
 
@@ -101,6 +103,11 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  const tts = useSpeechSynthesis();
+  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  const autoSpeakRef = useRef(autoSpeak);
+  autoSpeakRef.current = autoSpeak;
+
   const active = getAgent(activeId) ?? AGENTS[0];
   const activeThread = threads[activeId] ?? [];
   const isStreaming = !!streaming[activeId];
@@ -177,6 +184,7 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
     abortRefs.current[agentId] = ac;
 
     let assistantText = "";
+    let completed = false;
 
     try {
       const res = await fetch("/api/chat", {
@@ -207,6 +215,7 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
           ),
         }));
       }
+      completed = true;
     } catch (e: unknown) {
       if ((e as Error).name !== "AbortError") {
         const msg = e instanceof Error ? e.message : String(e);
@@ -230,6 +239,8 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
           assistantMessage: assistantText,
           timestamp: userMsg.ts,
         });
+        // Auto-read the finished reply aloud when auto-speak is enabled.
+        if (completed && autoSpeakRef.current) tts.speak(assistantId, assistantText);
       }
     }
   }
@@ -362,9 +373,12 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
               </p>
             </div>
           </div>
-          <span className="hidden shrink-0 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-dim)] sm:inline">
-            {active.model}
-          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <AutoSpeakToggle enabled={autoSpeak} onToggle={() => setAutoSpeak(!autoSpeak)} supported={tts.isSupported} />
+            <span className="hidden rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-dim)] sm:inline">
+              {active.model}
+            </span>
+          </div>
         </header>
 
         {/* Mobile agent switcher */}
@@ -448,11 +462,16 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
                         </span>
                       )}
                     </div>
-                    {!grouped && (
-                      <span className="px-1 font-mono text-[10px] text-[var(--color-ink-faint)]">
-                        {m.content || m.role === "user" ? fmtClock(m.ts) : ""}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1 px-1">
+                      {m.role === "assistant" && m.content && (
+                        <SpeakButton id={m.id} text={m.content} controller={tts} accent={active.gradient[0]} />
+                      )}
+                      {!grouped && (
+                        <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
+                          {m.content || m.role === "user" ? fmtClock(m.ts) : ""}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );
