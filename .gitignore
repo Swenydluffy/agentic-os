@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude-flow / ruflo local tooling state
+.claude-flow/
+
+# per-machine config written by the setup wizard (config.example.json is committed)
+/config.json
