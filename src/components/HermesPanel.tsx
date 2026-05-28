@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { Send, StopCircle, Zap, User, AlertTriangle, PlugZap } from "lucide-react";
-import { MicButton } from "./MicButton";
+import { MicButton, type MicHandle } from "./MicButton";
 import { saveChatExchange } from "@/lib/vault-client";
 import { cn } from "@/lib/utils";
 import { useSpeechSynthesis, useAutoSpeak } from "@/lib/useSpeechSynthesis";
@@ -51,6 +51,7 @@ export function HermesPanel() {
   const [streaming, setStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const micRef = useRef<MicHandle>(null);
 
   const tts = useSpeechSynthesis();
   const [autoSpeak, setAutoSpeak] = useAutoSpeak();
@@ -87,6 +88,7 @@ export function HermesPanel() {
     const content = (text ?? input).trim();
     if (!content || streaming) return;
     setInput("");
+    micRef.current?.reset();
 
     const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content };
     const assistantId = crypto.randomUUID();
@@ -239,7 +241,7 @@ export function HermesPanel() {
             }}
             className="flex items-end gap-2 border-t border-white/5 px-5 py-3"
           >
-            <MicButton value={input} onValueChange={setInput} iconSize={16} />
+            <MicButton ref={micRef} value={input} onValueChange={setInput} iconSize={16} />
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}

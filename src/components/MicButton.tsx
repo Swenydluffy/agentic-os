@@ -1,9 +1,16 @@
 "use client";
 
 import { Mic } from "lucide-react";
-import { useRef } from "react";
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import { cn } from "@/lib/utils";
+
+/** Imperative handle parents use after committing the input (e.g. on send). */
+export type MicHandle = {
+  /** Stop dictation and forget the accumulated transcript so a late
+   *  buffered `onresult` can't replay just-sent text back into the field. */
+  reset: () => void;
+};
 
 type MicButtonProps = {
   /** Current input value — captured as the base text when dictation begins. */
@@ -20,16 +27,14 @@ type MicButtonProps = {
  * Voice-dictation toggle for a chat composer. Renders nothing when the browser
  * lacks the Web Speech API, so callers can drop it next to any input freely.
  */
-export function MicButton({
-  value,
-  onValueChange,
-  className,
-  iconSize = 17,
-}: MicButtonProps) {
+export const MicButton = forwardRef<MicHandle, MicButtonProps>(function MicButton(
+  { value, onValueChange, className, iconSize = 17 },
+  ref,
+) {
   // Text present when dictation started; transcription is appended onto it.
   const baseRef = useRef("");
 
-  const { isSupported, isListening, start, stop } = useSpeechRecognition({
+  const { isSupported, isListening, start, stop, reset } = useSpeechRecognition({
     onTranscript: (transcript) => {
       const base = baseRef.current;
       if (!transcript) {
@@ -40,6 +45,17 @@ export function MicButton({
       onValueChange(base + sep + transcript);
     },
   });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      reset: () => {
+        baseRef.current = "";
+        reset();
+      },
+    }),
+    [reset],
+  );
 
   if (!isSupported) return null;
 
@@ -63,10 +79,10 @@ export function MicButton({
         isListening
           ? "mic-listening border-[var(--color-danger)]/50 bg-[var(--color-danger)]/15 text-[var(--color-danger)]"
           : "border-white/10 bg-white/[0.03] text-[var(--color-ink-dim)] hover:bg-white/[0.07] hover:text-white",
-        className
+        className,
       )}
     >
       <Mic size={iconSize} />
     </button>
   );
-}
+});

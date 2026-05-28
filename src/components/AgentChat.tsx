@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Send, StopCircle, Search, Sparkles, Paperclip, User } from "lucide-react";
 import { AGENTS, getAgent, type AgentStatus } from "@/lib/agents";
 import { AgentAvatar } from "./AgentAvatar";
-import { MicButton } from "./MicButton";
+import { MicButton, type MicHandle } from "./MicButton";
 import { cn } from "@/lib/utils";
 import { saveChatExchange } from "@/lib/vault-client";
 import { useSpeechSynthesis, useAutoSpeak } from "@/lib/useSpeechSynthesis";
@@ -102,6 +102,7 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
   const abortRefs = useRef<Record<string, AbortController>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const micRef = useRef<MicHandle>(null);
 
   const tts = useSpeechSynthesis();
   const [autoSpeak, setAutoSpeak] = useAutoSpeak();
@@ -162,6 +163,9 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
 
     setInput("");
     if (inputRef.current) inputRef.current.style.height = "auto";
+    // Drop any buffered speech state so a late onresult can't echo the just-sent
+    // text back into the field.
+    micRef.current?.reset();
 
     const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content, ts: Date.now() };
     const assistantId = crypto.randomUUID();
@@ -509,7 +513,7 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
           >
             <Paperclip size={16} />
           </button>
-          <MicButton value={input} onValueChange={setInput} />
+          <MicButton ref={micRef} value={input} onValueChange={setInput} />
           <div className="relative flex-1">
             <textarea
               ref={inputRef}

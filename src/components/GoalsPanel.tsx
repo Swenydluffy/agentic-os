@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Target, Plus, Trash2, Check, Pencil } from "lucide-react";
-import { MicButton } from "./MicButton";
+import { MicButton, type MicHandle } from "./MicButton";
 import { saveGoals, type VaultSaveResult } from "@/lib/vault-client";
 import { localDateStamp } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -32,6 +32,7 @@ export function GoalsPanel() {
   const [save, setSave] = useState<SaveStatus>({ state: "idle" });
   const [hydrated, setHydrated] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const micRef = useRef<MicHandle>(null);
 
   // Hydrate the canonical list from localStorage on mount (no vault write).
   useEffect(() => {
@@ -76,6 +77,7 @@ export function GoalsPanel() {
     if (!text) return;
     mutate([...goals, { id: crypto.randomUUID(), text, done: false }]);
     setDraft("");
+    micRef.current?.reset();
   }
 
   function toggle(id: string) {
@@ -128,7 +130,7 @@ export function GoalsPanel() {
 
       {/* Add goal */}
       <div className="flex items-end gap-2 border-b border-white/5 px-5 py-3">
-        <MicButton value={draft} onValueChange={setDraft} />
+        <MicButton ref={micRef} value={draft} onValueChange={setDraft} />
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

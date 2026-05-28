@@ -23,6 +23,12 @@ type UseSpeechRecognition = {
   isListening: boolean;
   start: () => void;
   stop: () => void;
+  /**
+   * Abort + clear the accumulated transcript. Call this after the parent
+   * commits the input (e.g. on send) so a late, buffered `onresult` event
+   * can't replay the just-sent text back into the field.
+   */
+  reset: () => void;
 };
 
 /**
@@ -62,17 +68,20 @@ export function useSpeechRecognition(
       "en-US";
 
     recognition.onresult = (event) => {
+      // Rebuild the transcript from the engine's authoritative list every event
+      // instead of accumulating with `+=`. In continuous mode Chrome can re-emit
+      // already-final results in later events; an incremental accumulator would
+      // double-count them, drifting duplicate words into the output.
+      let finals = "";
       let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         const text = result[0]?.transcript ?? "";
-        if (result.isFinal) {
-          finalRef.current += text;
-        } else {
-          interim += text;
-        }
+        if (result.isFinal) finals += text;
+        else interim += text;
       }
-      onTranscriptRef.current((finalRef.current + interim).trim());
+      finalRef.current = finals;
+      onTranscriptRef.current((finals + interim).trim());
     };
 
     recognition.onend = () => setIsListening(false);
@@ -106,5 +115,12 @@ export function useSpeechRecognition(
     setIsListening(false);
   }, []);
 
-  return { isSupported, isListening, start, stop };
+  const reset = useCallback(() => {
+    // abort() drops any buffered events; stop() can still flush one last onresult.
+    recognitionRef.current?.abort();
+    finalRef.current = "";
+    setIsListening(false);
+  }, []);
+
+  return { isSupported, isListening, start, stop, reset };
 }

@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Sparkles, StopCircle, Bot, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { MicButton } from "./MicButton";
+import { MicButton, type MicHandle } from "./MicButton";
 import { getAgent } from "@/lib/agents";
 import { saveChatExchange } from "@/lib/vault-client";
 import { useSpeechSynthesis, useAutoSpeak } from "@/lib/useSpeechSynthesis";
@@ -31,6 +31,7 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
   const [streaming, setStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const micRef = useRef<MicHandle>(null);
 
   const tts = useSpeechSynthesis();
   const [autoSpeak, setAutoSpeak] = useAutoSpeak();
@@ -48,6 +49,7 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
     const content = (text ?? input).trim();
     if (!content || streaming) return;
     setInput("");
+    micRef.current?.reset();
     const userMsg: Msg = { id: crypto.randomUUID(), role: "user", content };
     const assistantId = crypto.randomUUID();
     setMessages((m) => [...m, userMsg, { id: assistantId, role: "assistant", content: "" }]);
@@ -219,7 +221,7 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
         }}
         className="flex items-end gap-2 border-t border-white/5 px-5 py-3"
       >
-        <MicButton value={input} onValueChange={setInput} iconSize={16} />
+        <MicButton ref={micRef} value={input} onValueChange={setInput} iconSize={16} />
         <div className="relative flex-1">
           <textarea
             value={input}
