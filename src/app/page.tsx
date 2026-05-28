@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Bot, Coins, Gauge, Sparkles, Zap, Server } from "lucide-react";
+import { Bot, Coins, Gauge, Sparkles, Zap, Server, Workflow, Radio, Boxes, ScrollText } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { Sidebar } from "@/components/Sidebar";
 import { StatTile } from "@/components/StatTile";
@@ -13,6 +13,7 @@ import { GoalsPanel } from "@/components/GoalsPanel";
 import { JournalPanel } from "@/components/JournalPanel";
 import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
+import { ComingSoon } from "@/components/ComingSoon";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -58,20 +59,34 @@ export default function Page() {
     []
   );
 
-  const view: "agents" | "chat" | "hermes" | "goals" | "journal" | "guide" | "dashboard" =
-    activeNav === "agents"
-      ? "agents"
-      : activeNav === "chat"
-        ? "chat"
-        : activeNav === "hermes"
-          ? "hermes"
-          : activeNav === "goals"
-            ? "goals"
-            : activeNav === "journal"
-              ? "journal"
-              : activeNav === "guide"
-                ? "guide"
-                : "dashboard";
+  type View =
+    | "dashboard"
+    | "agents"
+    | "chat"
+    | "hermes"
+    | "goals"
+    | "journal"
+    | "guide"
+    | "workflows"
+    | "telemetry"
+    | "memory"
+    | "logs";
+
+  // Each nav id maps to a panel; anything unknown falls back to the dashboard.
+  const PANELS: Record<string, View> = {
+    mission: "dashboard",
+    agents: "agents",
+    chat: "chat",
+    hermes: "hermes",
+    goals: "goals",
+    journal: "journal",
+    guide: "guide",
+    workflows: "workflows",
+    telemetry: "telemetry",
+    memory: "memory",
+    logs: "logs",
+  };
+  const view: View = PANELS[activeNav] ?? "dashboard";
 
   function openAgent(id: string) {
     setSelectedAgent(id);
@@ -113,6 +128,36 @@ export default function Page() {
             <HermesPanel />
           </div>
 
+          {/* Placeholder modules — clearly "coming soon", never dead buttons. */}
+          <div className={view === "workflows" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ComingSoon
+              title="Workflows"
+              description="Chain agents into automated, multi-step pipelines. Wiring this up is next on the roadmap."
+              icon={Workflow}
+            />
+          </div>
+          <div className={view === "telemetry" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ComingSoon
+              title="Telemetry"
+              description="Live metrics, latency, and token usage across the fleet — streaming dashboards land here soon."
+              icon={Radio}
+            />
+          </div>
+          <div className={view === "memory" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ComingSoon
+              title="Memory"
+              description="Browse and search the fleet's long-term memory and embeddings. Not yet wired to a store."
+              icon={Boxes}
+            />
+          </div>
+          <div className={view === "logs" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ComingSoon
+              title="Logs"
+              description="A searchable, filterable activity log across every agent and run is on the way."
+              icon={ScrollText}
+            />
+          </div>
+
           <div className={view === "dashboard" ? "h-full" : "hidden"}>
           <div className="grid h-full grid-cols-12 gap-4 overflow-y-auto p-4 lg:p-6">
             <motion.div
@@ -135,8 +180,8 @@ export default function Page() {
                 </p>
               </div>
               <div className="hidden items-center gap-2 md:flex">
-                <PrimaryAction icon={<Zap size={14} />} label="Launch Workflow" />
-                <SecondaryAction icon={<Sparkles size={14} />} label="Ask Claude" />
+                <PrimaryAction icon={<Zap size={14} />} label="Launch Workflow" onClick={() => setActiveNav("workflows")} />
+                <SecondaryAction icon={<Sparkles size={14} />} label="Ask Claude" onClick={() => setActiveNav("chat")} />
               </div>
             </motion.div>
 
@@ -219,9 +264,9 @@ export default function Page() {
   );
 }
 
-function PrimaryAction({ icon, label }: { icon: React.ReactNode; label: string }) {
+function PrimaryAction({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
   return (
-    <button className="group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-[var(--color-cyan)]/25 to-[var(--color-violet)]/25 px-4 py-2 text-sm font-medium text-white transition hover:from-[var(--color-cyan)]/40 hover:to-[var(--color-violet)]/40">
+    <button onClick={onClick} className="group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-[var(--color-cyan)]/25 to-[var(--color-violet)]/25 px-4 py-2 text-sm font-medium text-white transition hover:from-[var(--color-cyan)]/40 hover:to-[var(--color-violet)]/40">
       <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
       <span className="relative flex items-center gap-2">
         {icon}
@@ -231,9 +276,9 @@ function PrimaryAction({ icon, label }: { icon: React.ReactNode; label: string }
   );
 }
 
-function SecondaryAction({ icon, label }: { icon: React.ReactNode; label: string }) {
+function SecondaryAction({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
   return (
-    <button className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-[var(--color-ink-dim)] transition hover:bg-white/[0.07] hover:text-white">
+    <button onClick={onClick} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-[var(--color-ink-dim)] transition hover:bg-white/[0.07] hover:text-white">
       {icon}
       {label}
     </button>
