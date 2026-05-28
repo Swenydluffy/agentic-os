@@ -91,7 +91,15 @@ export function Sidebar({
       })}
 
       <div className="mt-auto px-3 pb-1">
-        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-[var(--color-ink-dim)] transition hover:bg-white/[0.03] hover:text-white">
+        <button
+          onClick={() => onSelect("settings")}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition",
+            active === "settings"
+              ? "bg-white/[0.06] text-white"
+              : "text-[var(--color-ink-dim)] hover:bg-white/[0.03] hover:text-white"
+          )}
+        >
           <Settings size={16} />
           <span>Settings</span>
         </button>

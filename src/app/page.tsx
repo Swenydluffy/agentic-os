@@ -14,6 +14,7 @@ import { JournalPanel } from "@/components/JournalPanel";
 import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
 import { ComingSoon } from "@/components/ComingSoon";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -70,7 +71,8 @@ export default function Page() {
     | "workflows"
     | "telemetry"
     | "memory"
-    | "logs";
+    | "logs"
+    | "settings";
 
   // Each nav id maps to a panel; anything unknown falls back to the dashboard.
   const PANELS: Record<string, View> = {
@@ -85,6 +87,7 @@ export default function Page() {
     telemetry: "telemetry",
     memory: "memory",
     logs: "logs",
+    settings: "settings",
   };
   const view: View = PANELS[activeNav] ?? "dashboard";
 
@@ -156,6 +159,9 @@ export default function Page() {
               description="A searchable, filterable activity log across every agent and run is on the way."
               icon={ScrollText}
             />
+          </div>
+          <div className={view === "settings" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <SettingsPanel />
           </div>
 
           <div className={view === "dashboard" ? "h-full" : "hidden"}>
