@@ -58,18 +58,20 @@ export default function Page() {
     []
   );
 
-  const view: "console" | "hermes" | "goals" | "journal" | "guide" | "dashboard" =
-    activeNav === "agents" || activeNav === "chat"
-      ? "console"
-      : activeNav === "hermes"
-        ? "hermes"
-        : activeNav === "goals"
-          ? "goals"
-          : activeNav === "journal"
-            ? "journal"
-            : activeNav === "guide"
-              ? "guide"
-              : "dashboard";
+  const view: "agents" | "chat" | "hermes" | "goals" | "journal" | "guide" | "dashboard" =
+    activeNav === "agents"
+      ? "agents"
+      : activeNav === "chat"
+        ? "chat"
+        : activeNav === "hermes"
+          ? "hermes"
+          : activeNav === "goals"
+            ? "goals"
+            : activeNav === "journal"
+              ? "journal"
+              : activeNav === "guide"
+                ? "guide"
+                : "dashboard";
 
   function openAgent(id: string) {
     setSelectedAgent(id);
@@ -84,9 +86,17 @@ export default function Page() {
         <TopBar onOpenPalette={() => setPaletteOpen(true)} />
 
         <div className="relative flex-1 overflow-hidden">
-          {/* Console stays mounted so conversations survive view switches. */}
-          <div className={view === "console" ? "h-full p-4 lg:p-6" : "hidden"}>
+          {/* Agents: roster of all configured agents with status; switch + chat.
+              Stays mounted so conversations survive view switches. */}
+          <div className={view === "agents" ? "h-full p-4 lg:p-6" : "hidden"}>
             <AgentChat initialAgentId={selectedAgent} />
+          </div>
+
+          {/* Claude Console: the general Claude chat (not pinned to an agent). */}
+          <div className={view === "chat" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <div className="mx-auto h-full max-w-3xl">
+              <ChatPanel pinnedAgent={null} />
+            </div>
           </div>
 
           {/* Goals & Journal stay mounted so unsaved input survives nav switches. */}
