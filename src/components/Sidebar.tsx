@@ -13,6 +13,7 @@ import {
   Target,
   NotebookPen,
   BookOpen,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ const NAV = [
   { id: "mission", label: "Mission Control", icon: LayoutGrid },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "chat", label: "Claude Console", icon: MessageSquare },
+  { id: "hermes", label: "Hermes", icon: Zap },
   { id: "goals", label: "Goals", icon: Target },
   { id: "journal", label: "Journal", icon: NotebookPen },
   { id: "guide", label: "Guide", icon: BookOpen },

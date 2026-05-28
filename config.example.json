@@ -20,5 +20,9 @@
     { "id": "memory", "name": "Memoria", "model": "claude-haiku-4-5-20251001", "enabled": true },
     { "id": "scout", "name": "Scout", "model": "claude-haiku-4-5-20251001", "enabled": true }
   ],
-  "detectedTools": []
+  "detectedTools": [],
+  "hermes": {
+    "url": "",
+    "token": ""
+  }
 }

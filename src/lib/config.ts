@@ -27,11 +27,19 @@ export interface ModelSettings {
   haiku: string;
 }
 
+export interface HermesSettings {
+  /** Base URL of the Hermes Agent server (e.g. http://host:9119). Empty => disabled. */
+  url: string;
+  /** Auth token sent as the X-Hermes-Session-Token header (kept server-side; never shipped to the browser). */
+  token: string;
+}
+
 export interface AppConfig {
   vault: VaultSettings;
   models: ModelSettings;
   agents: AgentConfig[];
   detectedTools: string[];
+  hermes: HermesSettings;
 }
 
 /** Built-in defaults, sourced from the committed config.example.json. */
@@ -65,6 +73,8 @@ export function mergeConfig(partial: unknown): AppConfig {
     typeof p.vault === "object" && p.vault !== null ? (p.vault as Record<string, unknown>) : {};
   const models =
     typeof p.models === "object" && p.models !== null ? (p.models as Record<string, unknown>) : {};
+  const hermes =
+    typeof p.hermes === "object" && p.hermes !== null ? (p.hermes as Record<string, unknown>) : {};
 
   return {
     vault: {
@@ -83,5 +93,9 @@ export function mergeConfig(partial: unknown): AppConfig {
     detectedTools: Array.isArray(p.detectedTools)
       ? p.detectedTools.filter((t): t is string => typeof t === "string")
       : [...base.detectedTools],
+    hermes: {
+      url: typeof hermes.url === "string" ? hermes.url : base.hermes.url,
+      token: typeof hermes.token === "string" ? hermes.token : base.hermes.token,
+    },
   };
 }

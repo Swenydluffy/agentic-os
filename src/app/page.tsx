@@ -12,6 +12,7 @@ import { AgentChat } from "@/components/AgentChat";
 import { GoalsPanel } from "@/components/GoalsPanel";
 import { JournalPanel } from "@/components/JournalPanel";
 import { GuidePanel } from "@/components/GuidePanel";
+import { HermesPanel } from "@/components/HermesPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
 import { CommandPalette } from "@/components/CommandPalette";
@@ -57,16 +58,18 @@ export default function Page() {
     []
   );
 
-  const view: "console" | "goals" | "journal" | "guide" | "dashboard" =
+  const view: "console" | "hermes" | "goals" | "journal" | "guide" | "dashboard" =
     activeNav === "agents" || activeNav === "chat"
       ? "console"
-      : activeNav === "goals"
-        ? "goals"
-        : activeNav === "journal"
-          ? "journal"
-          : activeNav === "guide"
-            ? "guide"
-            : "dashboard";
+      : activeNav === "hermes"
+        ? "hermes"
+        : activeNav === "goals"
+          ? "goals"
+          : activeNav === "journal"
+            ? "journal"
+            : activeNav === "guide"
+              ? "guide"
+              : "dashboard";
 
   function openAgent(id: string) {
     setSelectedAgent(id);
@@ -95,6 +98,9 @@ export default function Page() {
           </div>
           <div className={view === "guide" ? "h-full p-4 lg:p-6" : "hidden"}>
             <GuidePanel />
+          </div>
+          <div className={view === "hermes" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <HermesPanel />
           </div>
 
           <div className={view === "dashboard" ? "h-full" : "hidden"}>

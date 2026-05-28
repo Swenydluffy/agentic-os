@@ -1,0 +1,199 @@
+/**
+ * Server-side client for a Hermes Agent instance (server-only).
+ *
+ * Hermes' chat WebSocket is auth-gated and its dashboard chat is disabled, but
+ * its REST API is reachable with the `X-Hermes-Session-Token` header. There is
+ * no direct "send to a session" REST endpoint, so each message is run as a
+ * throwaway **cron job** (the documented way to run the agent with a prompt):
+ *
+ *   1. POST /api/cron/jobs        { prompt, schedule, deliver: "local" } -> { id }
+ *   2. POST /api/cron/jobs/:id/trigger                       (run it now)
+ *   3. poll GET /api/sessions     until the session `cron_<id>_*` is not active
+ *   4. GET  /api/sessions/:sid/messages  -> final assistant message = the reply
+ *   5. DELETE /api/cron/jobs/:id  (clean up the throwaway job)
+ *
+ * `deliver: "local"` keeps the output in a readable session rather than sending
+ * it to a gateway (Telegram/Discord). Each message is an independent agent run.
+ */
+import type { HermesSettings } from "./config";
+
+export interface HermesStatus {
+  online: boolean;
+  version?: string;
+  gateway?: string;
+  error?: string;
+}
+
+export type HermesErrorCode = "unconfigured" | "offline" | "auth" | "protocol" | "timeout" | "no_reply";
+
+export class HermesError extends Error {
+  readonly code: HermesErrorCode;
+  constructor(message: string, code: HermesErrorCode) {
+    super(message);
+    this.name = "HermesError";
+    this.code = code;
+  }
+}
+
+const trimUrl = (url: string): string => url.replace(/\/+$/, "");
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+/** Ping `/api/status` for a real LIVE/OFFLINE signal (no auth required). */
+export async function pingHermes(cfg: HermesSettings, timeoutMs = 5000): Promise<HermesStatus> {
+  if (!cfg.url.trim()) return { online: false, error: "Hermes URL not configured" };
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${trimUrl(cfg.url)}/api/status`, { signal: controller.signal, cache: "no-store" });
+    if (!res.ok) return { online: false, error: `HTTP ${res.status}` };
+    const data = asRecord(await res.json().catch(() => null));
+    return {
+      online: true,
+      version: typeof data?.version === "string" ? data.version : undefined,
+      gateway: typeof data?.gateway_state === "string" ? data.gateway_state : undefined,
+    };
+  } catch (e) {
+    const message = e instanceof Error ? (e.name === "AbortError" ? "timed out" : e.message) : String(e);
+    return { online: false, error: message };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+interface ApiResult {
+  status: number;
+  data: unknown;
+}
+
+/** Authenticated JSON request to the Hermes REST API. */
+async function api(
+  cfg: HermesSettings,
+  method: string,
+  path: string,
+  body?: unknown,
+  timeoutMs = 20_000,
+): Promise<ApiResult> {
+  if (!cfg.token.trim()) throw new HermesError("Hermes token not configured (set hermes.token).", "auth");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${trimUrl(cfg.url)}${path}`, {
+      method,
+      headers: { "X-Hermes-Session-Token": cfg.token, "Content-Type": "application/json" },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    const text = await res.text();
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+    return { status: res.status, data };
+  } catch (e) {
+    if (e instanceof HermesError) throw e;
+    const message = e instanceof Error ? (e.name === "AbortError" ? "request timed out" : e.message) : String(e);
+    throw new HermesError(`Couldn't reach Hermes: ${message}`, "offline");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+interface SessionInfo {
+  id: string;
+  isActive: boolean;
+}
+
+function parseSessions(data: unknown): SessionInfo[] {
+  const root = asRecord(data);
+  const arr = root && Array.isArray(root.sessions) ? root.sessions : Array.isArray(data) ? data : [];
+  const out: SessionInfo[] = [];
+  for (const item of arr) {
+    const r = asRecord(item);
+    if (r && typeof r.id === "string") out.push({ id: r.id, isActive: r.is_active === true });
+  }
+  return out;
+}
+
+/** Last non-empty assistant text in a session's message list. */
+function finalAssistantText(data: unknown): string {
+  const root = asRecord(data);
+  const arr = root && Array.isArray(root.messages) ? root.messages : [];
+  let text = "";
+  for (const item of arr) {
+    const r = asRecord(item);
+    if (r?.role === "assistant" && typeof r.content === "string" && r.content.trim()) {
+      text = r.content;
+    }
+  }
+  return text.trim();
+}
+
+export interface HermesReply {
+  reply: string;
+  sessionId: string;
+}
+
+/**
+ * Send one message to Hermes and return its reply. Runs the agent via a
+ * throwaway cron job and reads the resulting session. Throws HermesError on
+ * config/auth/connection/timeout problems.
+ */
+export async function sendHermesMessage(message: string, cfg: HermesSettings): Promise<HermesReply> {
+  if (!cfg.url.trim()) throw new HermesError("Hermes is not configured (no URL).", "unconfigured");
+
+  const create = await api(cfg, "POST", "/api/cron/jobs", {
+    name: "mission-control",
+    prompt: message,
+    schedule: "0 3 * * *", // placeholder; we trigger manually and delete the job
+    deliver: "local", // keep the output in a readable session, not a gateway
+  });
+  if (create.status === 401 || create.status === 403) {
+    throw new HermesError("Hermes rejected the request — check the token (hermes.token).", "auth");
+  }
+  if (create.status !== 200) {
+    throw new HermesError(`Hermes couldn't queue the message (HTTP ${create.status}).`, "protocol");
+  }
+  const jobId = asRecord(create.data)?.id;
+  if (typeof jobId !== "string") throw new HermesError("Hermes didn't return a job id.", "protocol");
+
+  try {
+    const trig = await api(cfg, "POST", `/api/cron/jobs/${jobId}/trigger`, {});
+    if (trig.status !== 200) {
+      throw new HermesError(`Hermes couldn't run the message (HTTP ${trig.status}).`, "protocol");
+    }
+
+    const deadline = Date.now() + 150_000;
+    let sessionId: string | null = null;
+    while (Date.now() < deadline) {
+      await sleep(2500);
+      const session = parseSessions((await api(cfg, "GET", "/api/sessions")).data).find((s) =>
+        s.id.includes(jobId),
+      );
+      if (!session) continue;
+      sessionId = session.id;
+      if (session.isActive) continue; // still running
+
+      const reply = finalAssistantText((await api(cfg, "GET", `/api/sessions/${session.id}/messages`)).data);
+      if (reply === "[SILENT]") {
+        return { reply: "(Hermes completed the run with nothing to report.)", sessionId };
+      }
+      if (reply) return { reply, sessionId };
+      throw new HermesError("Hermes finished but returned no text.", "no_reply");
+    }
+    throw new HermesError("Hermes didn't reply within the time limit.", "timeout");
+  } finally {
+    // Best-effort cleanup so we never leave a recurring job behind.
+    try {
+      await api(cfg, "DELETE", `/api/cron/jobs/${jobId}`);
+    } catch {
+      /* ignore cleanup failures */
+    }
+  }
+}
