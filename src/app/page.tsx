@@ -15,6 +15,9 @@ import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModelsPanel } from "@/components/ModelsPanel";
+import { NotebookLMPanel } from "@/components/NotebookLMPanel";
+import { ParetoRouterPanel } from "@/components/ParetoRouterPanel";
+import { KanbanPanel } from "@/components/KanbanPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
@@ -67,6 +70,9 @@ export default function Page() {
     | "chat"
     | "hermes"
     | "models"
+    | "notebooklm"
+    | "router"
+    | "kanban"
     | "goals"
     | "journal"
     | "guide"
@@ -83,6 +89,9 @@ export default function Page() {
     chat: "chat",
     hermes: "hermes",
     models: "models",
+    notebooklm: "notebooklm",
+    router: "router",
+    kanban: "kanban",
     goals: "goals",
     journal: "journal",
     guide: "guide",
@@ -135,6 +144,18 @@ export default function Page() {
           </div>
           <div className={view === "models" ? "h-full p-4 lg:p-6" : "hidden"}>
             <ModelsPanel />
+          </div>
+
+          {/* NotebookLM, Pareto Router, and Kanban stay mounted so their
+              in-flight state (chat, routing, board) survives nav switches. */}
+          <div className={view === "notebooklm" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <NotebookLMPanel />
+          </div>
+          <div className={view === "router" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ParetoRouterPanel />
+          </div>
+          <div className={view === "kanban" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <KanbanPanel />
           </div>
 
           {/* Placeholder modules — clearly "coming soon", never dead buttons. */}
