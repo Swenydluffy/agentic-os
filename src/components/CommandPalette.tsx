@@ -12,6 +12,7 @@ import {
   Radio,
   ScrollText,
   Boxes,
+  BrainCircuit,
   ArrowRight,
 } from "lucide-react";
 import { AGENTS } from "@/lib/agents";
@@ -43,6 +44,7 @@ export function CommandPalette({
       { id: "mission", group: "Navigation", label: "Mission Control", hint: "overview", icon: <LayoutGrid size={14} />, action: () => onNavigate("mission") },
       { id: "agents", group: "Navigation", label: "Agents", hint: "full constellation", icon: <Bot size={14} />, action: () => onNavigate("agents") },
       { id: "chat", group: "Navigation", label: "Claude Console", hint: "direct line", icon: <MessageSquare size={14} />, action: () => onNavigate("chat") },
+      { id: "models", group: "Navigation", label: "Models", hint: "switch AI model", icon: <BrainCircuit size={14} />, action: () => onNavigate("models") },
       { id: "workflows", group: "Navigation", label: "Workflows", hint: "pipelines", icon: <Workflow size={14} />, action: () => onNavigate("workflows") },
       { id: "telemetry", group: "Navigation", label: "Telemetry", hint: "metrics", icon: <Radio size={14} />, action: () => onNavigate("telemetry") },
       { id: "memory", group: "Navigation", label: "Memory", hint: "embeddings + recall", icon: <Boxes size={14} />, action: () => onNavigate("memory") },

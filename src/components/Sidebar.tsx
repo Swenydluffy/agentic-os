@@ -14,14 +14,25 @@ import {
   NotebookPen,
   BookOpen,
   Zap,
+  BrainCircuit,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const NAV = [
+interface NavItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  /** Optional accent colour for the active indicator (defaults to cyan). */
+  accent?: string;
+}
+
+const NAV: NavItem[] = [
   { id: "mission", label: "Mission Control", icon: LayoutGrid },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "chat", label: "Claude Console", icon: MessageSquare },
   { id: "hermes", label: "Hermes", icon: Zap },
+  { id: "models", label: "Models", icon: BrainCircuit, accent: "#60a5fa" },
   { id: "goals", label: "Goals", icon: Target },
   { id: "journal", label: "Journal", icon: NotebookPen },
   { id: "guide", label: "Guide", icon: BookOpen },
@@ -59,6 +70,7 @@ export function Sidebar({
       {NAV.map((item) => {
         const Icon = item.icon;
         const isActive = active === item.id;
+        const accent = item.accent ?? "var(--color-cyan)";
         return (
           <button
             key={item.id}
@@ -78,12 +90,16 @@ export function Sidebar({
                 transition={{ type: "spring", stiffness: 380, damping: 30 }}
               />
             )}
-            <Icon size={16} className="relative z-10" />
+            <Icon
+              size={16}
+              className="relative z-10"
+              style={item.accent && isActive ? { color: item.accent } : undefined}
+            />
             <span className="relative z-10 tracking-wide">{item.label}</span>
             {isActive && (
               <span
                 className="relative z-10 ml-auto h-1.5 w-1.5 rounded-full"
-                style={{ background: "var(--color-cyan)", boxShadow: "0 0 10px var(--color-cyan)" }}
+                style={{ background: accent, boxShadow: `0 0 10px ${accent}` }}
               />
             )}
           </button>

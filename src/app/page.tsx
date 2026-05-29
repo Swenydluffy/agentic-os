@@ -14,6 +14,7 @@ import { JournalPanel } from "@/components/JournalPanel";
 import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
 import { ComingSoon } from "@/components/ComingSoon";
+import { ModelsPanel } from "@/components/ModelsPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
@@ -65,6 +66,7 @@ export default function Page() {
     | "agents"
     | "chat"
     | "hermes"
+    | "models"
     | "goals"
     | "journal"
     | "guide"
@@ -80,6 +82,7 @@ export default function Page() {
     agents: "agents",
     chat: "chat",
     hermes: "hermes",
+    models: "models",
     goals: "goals",
     journal: "journal",
     guide: "guide",
@@ -129,6 +132,9 @@ export default function Page() {
           </div>
           <div className={view === "hermes" ? "h-full p-4 lg:p-6" : "hidden"}>
             <HermesPanel />
+          </div>
+          <div className={view === "models" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ModelsPanel />
           </div>
 
           {/* Placeholder modules — clearly "coming soon", never dead buttons. */}

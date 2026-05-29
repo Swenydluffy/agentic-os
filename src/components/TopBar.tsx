@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Activity, Wifi, Cpu, MemoryStick, Search, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useActiveModel } from "@/lib/useActiveModel";
 
 function useNow() {
   const [now, setNow] = useState<Date | null>(null);
@@ -33,6 +34,7 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
   const cpu = useDriftingMetric(34, 8);
   const mem = useDriftingMetric(58, 4);
   const tok = useDriftingMetric(72, 12, 900);
+  const { model } = useActiveModel();
 
   const time = now
     ? now.toLocaleTimeString("en-US", { hour12: false })
@@ -82,9 +84,19 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
       </div>
 
       <div className="hidden items-center gap-3 md:flex">
+        <span
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] tracking-wider text-[var(--color-ink-dim)]"
+          title={`Active model · ${model.name} (${model.providerLabel})`}
+        >
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ background: model.color, boxShadow: `0 0 8px ${model.color}` }}
+          />
+          <span className="font-mono uppercase">{model.shortName}</span>
+        </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] tracking-wider text-[var(--color-ink-dim)]">
           <Wifi size={12} className="text-[var(--color-lime)]" />
-          <span className="font-mono uppercase">Claude · Online</span>
+          <span className="font-mono uppercase">Online</span>
         </span>
         <div className="flex flex-col items-end leading-none">
           <span className="font-mono text-sm tabular text-white">{time}</span>

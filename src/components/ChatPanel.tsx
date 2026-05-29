@@ -8,6 +8,7 @@ import { getAgent } from "@/lib/agents";
 import { saveChatExchange } from "@/lib/vault-client";
 import { useSpeechSynthesis, useAutoSpeak } from "@/lib/useSpeechSynthesis";
 import { SpeakButton, AutoSpeakToggle } from "./SpeakButton";
+import { useActiveModel } from "@/lib/useActiveModel";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };
 
@@ -37,6 +38,12 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
   const [autoSpeak, setAutoSpeak] = useAutoSpeak();
   const autoSpeakRef = useRef(autoSpeak);
   autoSpeakRef.current = autoSpeak;
+
+  // The active model is shared with the top bar and the Models panel. Keep it
+  // in a ref so an in-flight send always reads the latest selection.
+  const { model: activeModel } = useActiveModel();
+  const activeModelRef = useRef(activeModel);
+  activeModelRef.current = activeModel;
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -68,6 +75,8 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
         body: JSON.stringify({
           messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
           agent: pinnedAgent,
+          provider: activeModelRef.current.provider,
+          model: activeModelRef.current.model,
         }),
         signal: ac.signal,
       });
@@ -147,8 +156,15 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
         </div>
         <div className="flex items-center gap-2">
           <AutoSpeakToggle enabled={autoSpeak} onToggle={() => setAutoSpeak(!autoSpeak)} supported={tts.isSupported} />
-          <span className="hidden font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-ink-faint)] sm:inline">
-            model · sonnet 4.6
+          <span
+            className="hidden items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-ink-faint)] sm:inline-flex"
+            title={`${activeModel.name} · ${activeModel.providerLabel}`}
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ background: activeModel.color, boxShadow: `0 0 8px ${activeModel.color}` }}
+            />
+            model · {activeModel.shortName}
           </span>
         </div>
       </div>

@@ -1,11 +1,28 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { loadConfig } from "@/lib/config.server";
+import {
+  MODEL_OPTIONS,
+  OPENAI_COMPAT_PROVIDERS,
+  type ModelOption,
+  type ProviderId,
+} from "@/lib/models";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type IncomingMessage = { role: "user" | "assistant"; content: string };
+
+const PROVIDERS: ReadonlySet<ProviderId> = new Set([
+  "anthropic",
+  "openai",
+  "xai",
+  "deepseek",
+]);
+
+function isProvider(v: unknown): v is ProviderId {
+  return typeof v === "string" && PROVIDERS.has(v as ProviderId);
+}
 
 const DEMO_OPENERS: Record<string, string> = {
   Orchestrator: "On it — let me figure out who on the fleet should own this.",
@@ -26,6 +43,7 @@ export async function POST(req: NextRequest) {
     messages?: IncomingMessage[];
     system?: string;
     model?: string;
+    provider?: string;
     agent?: string;
     agentName?: string;
   } | null;
@@ -34,9 +52,16 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Bad request" }), { status: 400 });
   }
 
+  const provider: ProviderId = isProvider(body.provider) ? body.provider : "anthropic";
+
   const system =
     body.system ??
     `You are Claude, currently embedded as the central intelligence of a local mission-control dashboard called "C.M.C.". You coordinate a fleet of specialized AI agents on the user's machine. Respond with warmth, precision, and a hint of cinematic flair — think helpful copilot at a sci-fi command console. Keep responses tight unless detail is asked for.`;
+
+  // Non-Anthropic providers share an OpenAI-compatible chat-completions API.
+  if (provider !== "anthropic") {
+    return handleOpenAICompatible(provider, body.messages, system, body.model);
+  }
 
   if (!apiKey) {
     const last = body.messages[body.messages.length - 1]?.content ?? "";
@@ -67,6 +92,116 @@ export async function POST(req: NextRequest) {
               event.delta.type === "text_delta"
             ) {
               controller.enqueue(encoder.encode(event.delta.text));
+            }
+          }
+          controller.close();
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          controller.enqueue(encoder.encode(`\n\n[stream error: ${msg}]`));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ error: msg }), { status: 500 });
+  }
+}
+
+/**
+ * Stream a reply from an OpenAI-compatible provider (OpenAI, xAI, DeepSeek).
+ * All three speak the same `/chat/completions` SSE protocol, so one client
+ * serves them. Without the provider's API key we fall back to a clear demo
+ * stream rather than pretending to be connected.
+ */
+async function handleOpenAICompatible(
+  provider: Exclude<ProviderId, "anthropic">,
+  messages: IncomingMessage[],
+  system: string,
+  requestedModel?: string,
+) {
+  const cfg = OPENAI_COMPAT_PROVIDERS[provider];
+  const apiKey = process.env[cfg.envKey];
+  const option: ModelOption =
+    MODEL_OPTIONS.find((m) => m.provider === provider) ?? MODEL_OPTIONS[0];
+  const model = requestedModel?.trim() || option.model;
+
+  if (!apiKey) {
+    const last = messages[messages.length - 1]?.content ?? "";
+    const label =
+      option.name === option.providerLabel
+        ? option.name
+        : `${option.name} (${option.providerLabel})`;
+    const demo = `${label} selected.\n\nI caught: “${last.slice(0, 200)}” — and I'd love to actually run with it.\n\nThis provider isn't connected in this build (no API key). Add one to .env.local and ${option.name} comes fully online:\n  ${cfg.envKey}=…\n\nUntil then, Claude (Anthropic) is the wired-in default.`;
+    return streamPlainText(demo);
+  }
+
+  try {
+    const upstream = await fetch(cfg.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        stream: true,
+        max_tokens: 1024,
+        messages: [
+          { role: "system", content: system },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ],
+      }),
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      const detail = await upstream.text().catch(() => `HTTP ${upstream.status}`);
+      return new Response(
+        JSON.stringify({ error: `${option.providerLabel}: ${detail.slice(0, 500)}` }),
+        { status: 502 },
+      );
+    }
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const reader = upstream.body.getReader();
+
+    const readable = new ReadableStream({
+      async start(controller) {
+        let buffer = "";
+        try {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            // SSE frames are separated by blank lines; parse complete ones.
+            const frames = buffer.split("\n\n");
+            buffer = frames.pop() ?? "";
+            for (const frame of frames) {
+              for (const line of frame.split("\n")) {
+                const trimmed = line.trim();
+                if (!trimmed.startsWith("data:")) continue;
+                const data = trimmed.slice(5).trim();
+                if (data === "[DONE]") continue;
+                try {
+                  const json = JSON.parse(data) as {
+                    choices?: Array<{ delta?: { content?: string } }>;
+                  };
+                  const text = json.choices?.[0]?.delta?.content;
+                  if (text) controller.enqueue(encoder.encode(text));
+                } catch {
+                  /* skip keep-alives / partial frames */
+                }
+              }
             }
           }
           controller.close();
