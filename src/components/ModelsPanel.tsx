@@ -77,8 +77,8 @@ export function ModelsPanel() {
         </div>
 
         <p className="mt-5 text-xs leading-relaxed text-[var(--color-ink-faint)]">
-          Claude (Anthropic) is wired in and active out of the box. OpenAI, xAI, and DeepSeek come
-          fully online once their API key is set in <span className="font-mono">.env.local</span>;
+          Claude (Anthropic) is wired in and active out of the box. OpenAI, xAI, DeepSeek, and Groq
+          come fully online once their API key is set in <span className="font-mono">.env.local</span>;
           until then they reply in demo mode.
         </p>
       </div>

@@ -14,6 +14,7 @@ export async function GET() {
     openai: (process.env[OPENAI_COMPAT_PROVIDERS.openai.envKey] ?? "").length > 0,
     xai: (process.env[OPENAI_COMPAT_PROVIDERS.xai.envKey] ?? "").length > 0,
     deepseek: (process.env[OPENAI_COMPAT_PROVIDERS.deepseek.envKey] ?? "").length > 0,
+    groq: (process.env[OPENAI_COMPAT_PROVIDERS.groq.envKey] ?? "").length > 0,
   };
   return Response.json({ ok: true, available });
 }

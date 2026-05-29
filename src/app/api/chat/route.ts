@@ -18,6 +18,7 @@ const PROVIDERS: ReadonlySet<ProviderId> = new Set([
   "openai",
   "xai",
   "deepseek",
+  "groq",
 ]);
 
 function isProvider(v: unknown): v is ProviderId {

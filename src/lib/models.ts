@@ -6,7 +6,7 @@
  */
 
 /** Supported model providers. */
-export type ProviderId = "anthropic" | "openai" | "xai" | "deepseek";
+export type ProviderId = "anthropic" | "openai" | "xai" | "deepseek" | "groq";
 
 export interface ModelOption {
   /** Stable card id, persisted in localStorage. */
@@ -30,9 +30,9 @@ export interface ModelOption {
 }
 
 /**
- * The four models surfaced in the Models panel. Anthropic is the default and
- * is fully wired; the OpenAI-compatible providers (OpenAI, xAI, DeepSeek) come
- * online once their API key is present in the environment — see `/api/chat`.
+ * The five models surfaced in the Models panel. Anthropic is the default and
+ * is fully wired; the OpenAI-compatible providers (OpenAI, xAI, DeepSeek, Groq)
+ * come online once their API key is present in the environment — see `/api/chat`.
  */
 export const MODEL_OPTIONS: readonly ModelOption[] = [
   {
@@ -79,6 +79,17 @@ export const MODEL_OPTIONS: readonly ModelOption[] = [
     tagline: "Open, efficient reasoning at low cost.",
     current: false,
   },
+  {
+    id: "llama-3",
+    name: "Llama 3",
+    shortName: "Llama 3",
+    provider: "groq",
+    providerLabel: "Groq",
+    model: "llama-3.3-70b-versatile",
+    color: "#60a5fa",
+    tagline: "Meta's open Llama 3.3 70B, served at Groq speed.",
+    current: false,
+  },
 ] as const;
 
 /** The id selected when nothing has been persisted yet. */
@@ -96,7 +107,7 @@ export function getModelOption(id: string | null | undefined): ModelOption {
 /**
  * OpenAI-compatible endpoint config for the non-Anthropic providers. Each of
  * these exposes the same `/chat/completions` streaming API, so one fetch-based
- * client (in `/api/chat`) drives all three.
+ * client (in `/api/chat`) drives them all.
  */
 export interface OpenAICompatProvider {
   /** Full chat-completions endpoint URL. */
@@ -112,4 +123,5 @@ export const OPENAI_COMPAT_PROVIDERS: Record<
   openai: { url: "https://api.openai.com/v1/chat/completions", envKey: "OPENAI_API_KEY" },
   xai: { url: "https://api.x.ai/v1/chat/completions", envKey: "XAI_API_KEY" },
   deepseek: { url: "https://api.deepseek.com/v1/chat/completions", envKey: "DEEPSEEK_API_KEY" },
+  groq: { url: "https://api.groq.com/openai/v1/chat/completions", envKey: "GROQ_API_KEY" },
 };
