@@ -19,6 +19,7 @@ import { NotebookLMPanel } from "@/components/NotebookLMPanel";
 import { ParetoRouterPanel } from "@/components/ParetoRouterPanel";
 import { KanbanPanel } from "@/components/KanbanPanel";
 import { RufloPanel } from "@/components/RufloPanel";
+import { TwitterPanel } from "@/components/TwitterPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
@@ -75,6 +76,7 @@ export default function Page() {
     | "router"
     | "kanban"
     | "ruflo"
+    | "twitter"
     | "goals"
     | "journal"
     | "guide"
@@ -95,6 +97,7 @@ export default function Page() {
     router: "router",
     kanban: "kanban",
     ruflo: "ruflo",
+    twitter: "twitter",
     goals: "goals",
     journal: "journal",
     guide: "guide",
@@ -165,6 +168,12 @@ export default function Page() {
               Stays mounted so its 10s polling and any open composer survive nav switches. */}
           <div className={view === "ruflo" ? "h-full p-4 lg:p-6" : "hidden"}>
             <RufloPanel />
+          </div>
+
+          {/* X (Twitter) Search — recent-search against the X API v2.
+              Stays mounted so the current query and results survive nav switches. */}
+          <div className={view === "twitter" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <TwitterPanel />
           </div>
 
           {/* Placeholder modules — clearly "coming soon", never dead buttons. */}

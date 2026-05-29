@@ -19,6 +19,7 @@ import {
   Route,
   KanbanSquare,
   Waypoints,
+  Hash,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ const NAV: NavItem[] = [
   { id: "router", label: "Pareto Router", icon: Route, accent: "#60a5fa" },
   { id: "kanban", label: "Kanban", icon: KanbanSquare, accent: "#60a5fa" },
   { id: "ruflo", label: "Ruflo Swarm", icon: Waypoints, accent: "#60a5fa" },
+  { id: "twitter", label: "X Search", icon: Hash, accent: "#60a5fa" },
   { id: "goals", label: "Goals", icon: Target },
   { id: "journal", label: "Journal", icon: NotebookPen },
   { id: "guide", label: "Guide", icon: BookOpen },
