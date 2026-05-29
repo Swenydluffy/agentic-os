@@ -30,7 +30,7 @@ export interface ModelOption {
 }
 
 /**
- * The five models surfaced in the Models panel. Anthropic is the default and
+ * The six models surfaced in the Models panel. Anthropic is the default and
  * is fully wired; the OpenAI-compatible providers (OpenAI, xAI, DeepSeek, Groq)
  * come online once their API key is present in the environment — see `/api/chat`.
  */
@@ -88,6 +88,17 @@ export const MODEL_OPTIONS: readonly ModelOption[] = [
     model: "llama-3.3-70b-versatile",
     color: "#60a5fa",
     tagline: "Meta's open Llama 3.3 70B, served at Groq speed.",
+    current: false,
+  },
+  {
+    id: "qwen",
+    name: "Qwen QwQ 32B",
+    shortName: "Qwen",
+    provider: "groq",
+    providerLabel: "Groq",
+    model: "qwen-qwq-32b",
+    color: "#60a5fa",
+    tagline: "Alibaba's QwQ 32B reasoning model, served at Groq speed.",
     current: false,
   },
 ] as const;
