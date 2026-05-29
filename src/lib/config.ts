@@ -34,12 +34,22 @@ export interface HermesSettings {
   token: string;
 }
 
+export interface RufloSettings {
+  /**
+   * Base URL of the local Ruflo / OpenClaw gateway (e.g. http://localhost:18789).
+   * The gateway auth token is NOT stored here — it is resolved server-side from
+   * the OpenClaw config (~/.openclaw/openclaw.json) so it never reaches the browser.
+   */
+  url: string;
+}
+
 export interface AppConfig {
   vault: VaultSettings;
   models: ModelSettings;
   agents: AgentConfig[];
   detectedTools: string[];
   hermes: HermesSettings;
+  ruflo: RufloSettings;
 }
 
 /** Built-in defaults, sourced from the committed config.example.json. */
@@ -75,6 +85,8 @@ export function mergeConfig(partial: unknown): AppConfig {
     typeof p.models === "object" && p.models !== null ? (p.models as Record<string, unknown>) : {};
   const hermes =
     typeof p.hermes === "object" && p.hermes !== null ? (p.hermes as Record<string, unknown>) : {};
+  const ruflo =
+    typeof p.ruflo === "object" && p.ruflo !== null ? (p.ruflo as Record<string, unknown>) : {};
 
   return {
     vault: {
@@ -96,6 +108,9 @@ export function mergeConfig(partial: unknown): AppConfig {
     hermes: {
       url: typeof hermes.url === "string" ? hermes.url : base.hermes.url,
       token: typeof hermes.token === "string" ? hermes.token : base.hermes.token,
+    },
+    ruflo: {
+      url: typeof ruflo.url === "string" && ruflo.url.trim().length > 0 ? ruflo.url : base.ruflo.url,
     },
   };
 }

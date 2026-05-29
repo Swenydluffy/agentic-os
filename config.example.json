@@ -24,5 +24,8 @@
   "hermes": {
     "url": "",
     "token": ""
+  },
+  "ruflo": {
+    "url": "http://localhost:18789"
   }
 }

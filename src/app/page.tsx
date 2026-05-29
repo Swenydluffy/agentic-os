@@ -18,6 +18,7 @@ import { ModelsPanel } from "@/components/ModelsPanel";
 import { NotebookLMPanel } from "@/components/NotebookLMPanel";
 import { ParetoRouterPanel } from "@/components/ParetoRouterPanel";
 import { KanbanPanel } from "@/components/KanbanPanel";
+import { RufloPanel } from "@/components/RufloPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
@@ -73,6 +74,7 @@ export default function Page() {
     | "notebooklm"
     | "router"
     | "kanban"
+    | "ruflo"
     | "goals"
     | "journal"
     | "guide"
@@ -92,6 +94,7 @@ export default function Page() {
     notebooklm: "notebooklm",
     router: "router",
     kanban: "kanban",
+    ruflo: "ruflo",
     goals: "goals",
     journal: "journal",
     guide: "guide",
@@ -156,6 +159,12 @@ export default function Page() {
           </div>
           <div className={view === "kanban" ? "h-full p-4 lg:p-6" : "hidden"}>
             <KanbanPanel />
+          </div>
+
+          {/* Ruflo Swarm — live agent fleet on the local OpenClaw gateway.
+              Stays mounted so its 10s polling and any open composer survive nav switches. */}
+          <div className={view === "ruflo" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <RufloPanel />
           </div>
 
           {/* Placeholder modules — clearly "coming soon", never dead buttons. */}
