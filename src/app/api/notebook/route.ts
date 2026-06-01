@@ -11,7 +11,14 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Action = "list" | "query" | "studio_status" | "studio_create" | "download" | "assets";
+type Action =
+  | "list"
+  | "query"
+  | "studio_status"
+  | "studio_create"
+  | "download"
+  | "assets"
+  | "add_source";
 
 const ACTIONS: ReadonlySet<Action> = new Set([
   "list",
@@ -20,6 +27,7 @@ const ACTIONS: ReadonlySet<Action> = new Set([
   "studio_create",
   "download",
   "assets",
+  "add_source",
 ]);
 
 function isAction(v: unknown): v is Action {
@@ -34,6 +42,7 @@ interface Body {
   artifactType?: string;
   artifactId?: string;
   focusPrompt?: string;
+  url?: string;
 }
 
 function ok(data: unknown) {
@@ -145,6 +154,23 @@ export async function POST(req: NextRequest) {
         if (!notebookId) return fail("A notebook is required.", 400);
         const files = await listAssets(notebookId, body.title ?? "");
         return ok(files);
+      }
+
+      case "add_source": {
+        const notebookId = body.notebookId?.trim();
+        const url = body.url?.trim();
+        if (!notebookId) return fail("A notebook is required.", 400);
+        if (!url) return fail("A source URL is required.", 400);
+        if (!/^https?:\/\/\S+$/i.test(url)) {
+          return fail("Enter a valid http(s) URL (website, YouTube, or Google Doc).", 400);
+        }
+        // wait:true so the source is ingested before the panel re-reads the count.
+        const payload = await callNotebookTool(
+          "source_add",
+          { notebook_id: notebookId, source_type: "url", url, wait: true, wait_timeout: 90 },
+          100_000,
+        );
+        return ok(payload);
       }
     }
   } catch (e) {

@@ -25,6 +25,9 @@ import {
   Table2,
   FileText,
   GalleryVerticalEnd,
+  Plus,
+  X,
+  Link2,
   type LucideIcon,
 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
@@ -176,6 +179,12 @@ export function NotebookPanel() {
 
   const [assets, setAssets] = useState<Load<AssetFile>>({ state: "idle" });
 
+  const [addOpen, setAddOpen] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [addingSource, setAddingSource] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const sourceMicRef = useRef<MicHandle>(null);
+
   const selected =
     notebooks.state === "ready" ? notebooks.items.find((n) => n.id === selectedId) ?? null : null;
   const selectedTitle = selected?.title ?? "";
@@ -235,6 +244,37 @@ export function NotebookPanel() {
     setArtifacts({ state: "idle" });
     setAssets({ state: "idle" });
     setGenNote(null);
+  }
+
+  function openAddSource() {
+    setAddError(null);
+    setAddOpen(true);
+  }
+
+  function closeAddSource() {
+    if (addingSource) return; // don't drop a request mid-flight
+    setAddOpen(false);
+    setSourceUrl("");
+    setAddError(null);
+    sourceMicRef.current?.reset();
+  }
+
+  async function addSource() {
+    const url = sourceUrl.trim();
+    if (!url || !selectedId || addingSource) return;
+    setAddingSource(true);
+    setAddError(null);
+    const res = await callApi({ action: "add_source", notebookId: selectedId, url });
+    setAddingSource(false);
+    if (res.ok) {
+      setAddOpen(false);
+      setSourceUrl("");
+      sourceMicRef.current?.reset();
+      // Re-read the library so the notebook's source count reflects the new source.
+      await loadNotebooks();
+    } else {
+      setAddError(res.error);
+    }
   }
 
   async function ask() {
@@ -377,7 +417,9 @@ export function NotebookPanel() {
           <LibraryTab
             notebooks={notebooks}
             selectedId={selectedId}
+            selectedTitle={selected?.title ?? null}
             onPick={pickNotebook}
+            onAddSource={openAddSource}
             onRetry={() => void loadNotebooks()}
           />
         )}
@@ -420,6 +462,19 @@ export function NotebookPanel() {
           />
         )}
       </div>
+
+      {addOpen && selected && (
+        <AddSourceModal
+          notebookTitle={selected.title}
+          url={sourceUrl}
+          onUrl={setSourceUrl}
+          adding={addingSource}
+          error={addError}
+          micRef={sourceMicRef}
+          onAdd={addSource}
+          onClose={closeAddSource}
+        />
+      )}
     </div>
   );
 }
@@ -545,12 +600,16 @@ function formatBytes(n: number): string {
 function LibraryTab({
   notebooks,
   selectedId,
+  selectedTitle,
   onPick,
+  onAddSource,
   onRetry,
 }: {
   notebooks: Load<Notebook>;
   selectedId: string | null;
+  selectedTitle: string | null;
   onPick: (id: string) => void;
+  onAddSource: () => void;
   onRetry: () => void;
 }) {
   if (notebooks.state === "loading" || notebooks.state === "idle") return <Spinner />;
@@ -566,6 +625,20 @@ function LibraryTab({
   }
   return (
     <div className="h-full overflow-y-auto px-5 py-4">
+      {selectedId && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+          <p className="min-w-0 truncate text-xs text-[var(--color-ink-dim)]">
+            Active · <span className="text-white">{selectedTitle}</span>
+          </p>
+          <button
+            onClick={onAddSource}
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-[#04060d] transition hover:opacity-90"
+            style={{ background: ACCENT }}
+          >
+            <Plus size={14} strokeWidth={2.5} /> Add Source
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {notebooks.items.map((nb) => {
           const active = nb.id === selectedId;
@@ -982,6 +1055,120 @@ function AssetCard({ asset }: { asset: AssetFile }) {
         <p className="truncate font-mono text-[11px] text-white">{asset.file}</p>
         <span className="shrink-0 text-[10px] text-[var(--color-ink-faint)]">{formatBytes(asset.size)}</span>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------ add source -------------------------------- */
+
+function AddSourceModal({
+  notebookTitle,
+  url,
+  onUrl,
+  adding,
+  error,
+  micRef,
+  onAdd,
+  onClose,
+}: {
+  notebookTitle: string;
+  url: string;
+  onUrl: (v: string) => void;
+  adding: boolean;
+  error: string | null;
+  micRef: React.RefObject<MicHandle | null>;
+  onAdd: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
+      {/* Backdrop — click to dismiss */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.22, ease: [0.2, 0.7, 0.2, 1] }}
+        role="dialog"
+        aria-modal
+        aria-label="Add source"
+        className="panel relative z-10 w-full max-w-md p-5"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-xl"
+              style={{ background: `${ACCENT}22`, color: ACCENT }}
+            >
+              <Link2 size={16} />
+            </span>
+            <div>
+              <h3 className="font-display text-sm font-semibold text-white">Add source</h3>
+              <p className="truncate text-[11px] text-[var(--color-ink-dim)]">to {notebookTitle}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-[var(--color-ink-dim)] transition hover:bg-white/[0.07] hover:text-white"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onAdd();
+          }}
+          className="mt-4"
+        >
+          <label className="mb-1.5 block text-[10px] uppercase tracking-[0.2em] text-[var(--color-ink-faint)]">
+            URL · website, YouTube, or Google Doc
+          </label>
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-2 py-1.5 focus-within:border-white/25">
+            <input
+              autoFocus
+              value={url}
+              onChange={(e) => onUrl(e.target.value)}
+              placeholder="https://…"
+              inputMode="url"
+              className="h-8 flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-[var(--color-ink-faint)]"
+            />
+            <MicButton value={url} onValueChange={onUrl} ref={micRef} className="h-8 w-8" iconSize={14} />
+          </div>
+
+          {error && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-[var(--color-amber)]">
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+              {error}
+            </p>
+          )}
+
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={adding}
+              className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-[var(--color-ink-dim)] transition hover:bg-white/[0.07] hover:text-white disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={adding || !url.trim()}
+              className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-medium text-[#04060d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: ACCENT }}
+            >
+              {adding ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} strokeWidth={2.5} />}
+              {adding ? "Adding…" : "Add"}
+            </button>
+          </div>
+        </form>
+      </motion.div>
     </div>
   );
 }
