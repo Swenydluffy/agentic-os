@@ -314,7 +314,10 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
                     <span className="truncate font-display text-sm font-semibold text-white">
                       {a.name}
                     </span>
-                    <span className="shrink-0 font-mono text-[10px] text-[var(--color-ink-faint)]">
+                    <span
+                      suppressHydrationWarning
+                      className="shrink-0 font-mono text-[10px] text-[var(--color-ink-faint)]"
+                    >
                       {last ? fmtRail(last.ts) : ""}
                     </span>
                   </span>
@@ -471,7 +474,10 @@ export function AgentChat({ initialAgentId }: { initialAgentId?: string | null }
                         <SpeakButton id={m.id} text={m.content} controller={tts} accent={active.gradient[0]} />
                       )}
                       {!grouped && (
-                        <span className="font-mono text-[10px] text-[var(--color-ink-faint)]">
+                        <span
+                          suppressHydrationWarning
+                          className="font-mono text-[10px] text-[var(--color-ink-faint)]"
+                        >
                           {m.content || m.role === "user" ? fmtClock(m.ts) : ""}
                         </span>
                       )}
