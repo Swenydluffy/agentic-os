@@ -67,7 +67,7 @@ export function Sidebar({
 }) {
   return (
     <motion.aside
-      initial={{ x: -24, opacity: 0 }}
+      initial={false}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
       className="relative z-20 flex w-[240px] shrink-0 flex-col gap-1 border-r border-white/5 bg-black/20 px-3 py-5 backdrop-blur-xl"

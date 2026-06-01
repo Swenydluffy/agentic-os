@@ -248,7 +248,7 @@ export default function Page() {
           <div className={view === "dashboard" ? "h-full" : "hidden"}>
           <div className="grid h-full grid-cols-12 gap-4 overflow-y-auto p-4 lg:p-6">
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
               className="col-span-12 flex items-center justify-between"
