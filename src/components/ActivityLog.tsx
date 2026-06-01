@@ -40,6 +40,22 @@ function ts() {
   return d.toLocaleTimeString("en-US", { hour12: false }) + "." + String(d.getMilliseconds()).padStart(3, "0");
 }
 
+/**
+ * Time-dependent text can't be rendered during SSR/hydration without a mismatch
+ * (the server and client compute `ts()` at different instants). Render a stable
+ * placeholder until mounted, then reveal the real timestamp — so the server HTML
+ * and the first client render agree, and React hydrates cleanly.
+ */
+function Timestamp({ value }: { value: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return (
+    <span className="shrink-0 text-[var(--color-ink-faint)]">
+      {mounted ? value : "--:--:--.---"}
+    </span>
+  );
+}
+
 export function ActivityLog() {
   const [items, setItems] = useState<Entry[]>(() =>
     SAMPLE.slice(0, 6).map((s) => ({ ...s, id: crypto.randomUUID(), ts: ts() }))
@@ -80,7 +96,7 @@ export function ActivityLog() {
               transition={{ duration: 0.25, ease: [0.2, 0.7, 0.2, 1] }}
               className="flex items-start gap-2 rounded-md px-2 py-1.5 hover:bg-white/[0.02]"
             >
-              <span className="shrink-0 text-[var(--color-ink-faint)]">{e.ts}</span>
+              <Timestamp value={e.ts} />
               <span
                 className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em]"
                 style={{
