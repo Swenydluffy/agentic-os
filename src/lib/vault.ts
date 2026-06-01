@@ -13,7 +13,7 @@
  * This module has no Next.js dependencies so it can be unit-tested directly.
  */
 import { mkdir, writeFile, appendFile, access } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative, isAbsolute } from "node:path";
 
 // Date helpers are kept inline (not imported from ./date) so this server module
 // stays self-contained and runnable directly by Node — see scripts/test-vault.ts.
@@ -267,6 +267,77 @@ export async function writeGuide(
   const existed = await fileExists(absPath);
   await writeFile(absPath, frontmatter + markdown.trim() + "\n", "utf8");
   return { path: absPath, relativePath, created: !existed };
+}
+
+/* -------------------- generic markdown save (any panel) -------------------- */
+
+/**
+ * A free-form markdown save targeting `<vault>/<folder>/<section>/<file>.md`.
+ * This is the shared primitive any panel can use to sync its state to the vault
+ * (Kanban boards, future panels, etc.) without a bespoke entry type.
+ */
+export interface MarkdownSaveInput {
+  /** Subfolder under the Agentic OS folder, e.g. "Kanban". */
+  section: string;
+  /** File name (with or without a trailing ".md"), e.g. "board". */
+  file: string;
+  /** Full markdown content to write. */
+  content: string;
+  /** "replace" (default) rewrites the file; "append" adds to it. */
+  mode?: "replace" | "append";
+}
+
+/** Ceiling so a runaway client can't write an enormous file into the vault. */
+const MAX_MARKDOWN_BYTES = 1_000_000;
+
+/**
+ * Write arbitrary markdown into the vault under a sanitized section/file path.
+ * Section and file are reduced to safe single segments, and the resolved path
+ * is asserted to stay inside `<vault>/<folder>` so a crafted name can't escape.
+ */
+export async function writeVaultMarkdown(
+  input: MarkdownSaveInput,
+  vaultRoot: string,
+  vaultFolder: string,
+): Promise<VaultWriteResult> {
+  const section = sanitizeFileSegment(input.section);
+  let file = sanitizeFileSegment(input.file);
+  if (!/\.md$/i.test(file)) file += ".md";
+
+  const base = join(vaultRoot, vaultFolder);
+  const dir = join(base, section);
+  const absPath = join(dir, file);
+
+  // Containment guard: the target must resolve inside the Agentic OS folder.
+  const rel = relative(base, absPath);
+  if (rel.startsWith("..") || isAbsolute(rel)) {
+    throw new Error("Refusing to write outside the vault folder.");
+  }
+
+  const relativePath = join(vaultFolder, section, file);
+  await mkdir(dir, { recursive: true });
+
+  const existed = await fileExists(absPath);
+  if (input.mode === "append") {
+    await appendFile(absPath, input.content, "utf8");
+  } else {
+    await writeFile(absPath, input.content, "utf8");
+  }
+  return { path: absPath, relativePath, created: !existed };
+}
+
+/** Validate an untrusted markdown-save body, or return an error. */
+export function parseMarkdownSave(raw: unknown): MarkdownSaveInput | VaultParseError {
+  if (typeof raw !== "object" || raw === null) {
+    return { error: "Request body must be a JSON object" };
+  }
+  const o = raw as Record<string, unknown>;
+  if (!isNonEmptyString(o.section)) return { error: "section is required" };
+  if (!isNonEmptyString(o.file)) return { error: "file is required" };
+  if (typeof o.content !== "string") return { error: "content must be a string" };
+  if (o.content.length > MAX_MARKDOWN_BYTES) return { error: "content is too large" };
+  const mode = o.mode === "append" ? "append" : "replace";
+  return { section: o.section, file: o.file, content: o.content, mode };
 }
 
 export interface VaultParseError {

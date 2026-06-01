@@ -4,10 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { KanbanSquare, Plus, Trash2, X, GripVertical } from "lucide-react";
 import { AGENTS } from "@/lib/agents";
+import { saveVaultMarkdown, type VaultSaveResult } from "@/lib/vault-client";
 import { cn } from "@/lib/utils";
 
 const ACCENT = "#60a5fa";
 const STORAGE_KEY = "agentic-os:kanban";
+/** Single board, so one file. Saved to Agentic OS/Kanban/board.md in the vault. */
+const BOARD_NAME = "board";
+
+type SaveStatus =
+  | { state: "idle" }
+  | { state: "saving" }
+  | { state: "saved" }
+  | { state: "error"; detail: string };
 
 type ColumnId = "backlog" | "in-progress" | "review" | "done";
 type Priority = "low" | "medium" | "high";
@@ -55,13 +64,50 @@ function isCard(v: unknown): v is Card {
   );
 }
 
+/** Render the board as Obsidian-friendly markdown (one checkbox list per column). */
+function boardToMarkdown(cards: Card[]): string {
+  const lines: string[] = [
+    "---",
+    `updated: ${new Date().toISOString()}`,
+    "tags:",
+    "  - agentic-os",
+    "  - kanban",
+    "type: kanban",
+    "---",
+    "",
+    "# Kanban Board",
+    "",
+    `_${cards.length} ${cards.length === 1 ? "card" : "cards"}_`,
+    "",
+  ];
+  for (const col of COLUMNS) {
+    const colCards = cards.filter((c) => c.column === col.id);
+    lines.push(`## ${col.label} (${colCards.length})`, "");
+    if (colCards.length === 0) {
+      lines.push("_None_", "");
+      continue;
+    }
+    for (const c of colCards) {
+      const checked = col.id === "done" ? "x" : " ";
+      const meta = [PRIORITY_META[c.priority].label];
+      if (c.agent) meta.push(`@${c.agent}`);
+      lines.push(`- [${checked}] **${c.title}** · ${meta.join(" · ")}`);
+      if (c.description.trim()) lines.push(`  ${c.description.trim().replace(/\s*\n\s*/g, " ")}`);
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
 export function KanbanPanel() {
   const [cards, setCards] = useState<Card[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [composerColumn, setComposerColumn] = useState<ColumnId | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<ColumnId | null>(null);
+  const [vaultSave, setVaultSave] = useState<SaveStatus>({ state: "idle" });
   const skipPersist = useRef(true);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Hydrate from localStorage once.
   useEffect(() => {
@@ -90,14 +136,38 @@ export function KanbanPanel() {
     }
   }, [cards]);
 
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+    };
+  }, []);
+
+  /** Apply a board mutation: update state, then debounce a vault sync. */
+  function commit(next: Card[]) {
+    setCards(next);
+    setVaultSave({ state: "saving" });
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      void saveVaultMarkdown({
+        section: "Kanban",
+        file: BOARD_NAME,
+        content: boardToMarkdown(next),
+      }).then((r: VaultSaveResult) =>
+        setVaultSave(r.ok ? { state: "saved" } : { state: "error", detail: r.error }),
+      );
+    }, 600);
+  }
+
   function addCard(card: Omit<Card, "id">) {
-    setCards((c) => [...c, { ...card, id: crypto.randomUUID() }]);
+    commit([...cards, { ...card, id: crypto.randomUUID() }]);
   }
   function removeCard(id: string) {
-    setCards((c) => c.filter((x) => x.id !== id));
+    commit(cards.filter((x) => x.id !== id));
   }
   function moveCard(id: string, column: ColumnId) {
-    setCards((c) => c.map((x) => (x.id === id ? { ...x, column } : x)));
+    const card = cards.find((x) => x.id === id);
+    if (!card || card.column === column) return; // no-op drops don't dirty the vault
+    commit(cards.map((x) => (x.id === id ? { ...x, column } : x)));
   }
 
   function onDrop(column: ColumnId) {
@@ -124,9 +194,7 @@ export function KanbanPanel() {
             </p>
           </div>
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-ink-faint)]">
-          saved locally
-        </span>
+        <SaveBadge save={vaultSave} hydrated={hydrated} />
       </header>
 
       {/* Columns */}
@@ -285,6 +353,29 @@ function KanbanCard({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/* -------------------------------- save badge ------------------------------- */
+
+function SaveBadge({ save, hydrated }: { save: SaveStatus; hydrated: boolean }) {
+  if (!hydrated) return null;
+  const map: Record<SaveStatus["state"], { label: string; color: string }> = {
+    idle: { label: "Synced to vault", color: "var(--color-ink-faint)" },
+    saving: { label: "Saving…", color: "var(--color-cyan)" },
+    saved: { label: "Saved to vault", color: "var(--color-lime)" },
+    error: { label: "Save failed", color: "var(--color-danger)" },
+  };
+  const { label, color } = map[save.state];
+  return (
+    <span
+      className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em]"
+      style={{ color }}
+      title={save.state === "error" ? save.detail : undefined}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+      {label}
+    </span>
   );
 }
 

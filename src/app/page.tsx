@@ -15,7 +15,6 @@ import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModelsPanel } from "@/components/ModelsPanel";
-import { NotebookLMPanel } from "@/components/NotebookLMPanel";
 import { NotebookPanel } from "@/components/NotebookPanel";
 import { ParetoRouterPanel } from "@/components/ParetoRouterPanel";
 import { KanbanPanel } from "@/components/KanbanPanel";
@@ -76,7 +75,6 @@ export default function Page() {
     | "chat"
     | "hermes"
     | "models"
-    | "notebooklm"
     | "notebook"
     | "router"
     | "kanban"
@@ -101,7 +99,6 @@ export default function Page() {
     chat: "chat",
     hermes: "hermes",
     models: "models",
-    notebooklm: "notebooklm",
     notebook: "notebook",
     router: "router",
     kanban: "kanban",
@@ -164,14 +161,9 @@ export default function Page() {
             <ModelsPanel />
           </div>
 
-          {/* NotebookLM, Pareto Router, and Kanban stay mounted so their
-              in-flight state (chat, routing, board) survives nav switches. */}
-          <div className={view === "notebooklm" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <NotebookLMPanel />
-          </div>
-          {/* Notebook — notebooklm-mcp-backed library/chat/studio/assets,
-              synced to the Obsidian vault. Stays mounted so its active
-              notebook, chat, and in-flight studio jobs survive nav switches. */}
+          {/* Notebook, Pareto Router, and Kanban stay mounted so their
+              in-flight state (chat, routing, board) survives nav switches.
+              Notebook is notebooklm-mcp-backed and synced to the Obsidian vault. */}
           <div className={view === "notebook" ? "h-full p-4 lg:p-6" : "hidden"}>
             <NotebookPanel />
           </div>
