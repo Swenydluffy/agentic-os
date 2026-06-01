@@ -11,14 +11,28 @@ const ACCENT = "#60a5fa";
 
 type Availability = Record<ProviderId, boolean>;
 
+type ClaudeHealthReason =
+  | "online"
+  | "missing-key"
+  | "bad-format"
+  | "invalid-key"
+  | "unreachable"
+  | "error";
+
+interface ClaudeHealth {
+  online: boolean;
+  reason: ClaudeHealthReason;
+}
+
 interface ModelsResponse {
   ok: boolean;
   available?: Availability;
+  claude?: ClaudeHealth;
 }
 
 type AvailState =
   | { state: "loading" }
-  | { state: "ready"; available: Availability }
+  | { state: "ready"; available: Availability; claude?: ClaudeHealth }
   | { state: "error" };
 
 export function ModelsPanel() {
@@ -33,7 +47,7 @@ export function ModelsPanel() {
         const data = (await res.json()) as ModelsResponse;
         if (!active) return;
         if (res.ok && data.ok && data.available) {
-          setAvail({ state: "ready", available: data.available });
+          setAvail({ state: "ready", available: data.available, claude: data.claude });
         } else {
           setAvail({ state: "error" });
         }
@@ -86,6 +100,18 @@ export function ModelsPanel() {
   );
 }
 
+/** Specific status labels for the Claude card, keyed by the live health reason. */
+const CLAUDE_FAILURE_LABELS: Record<
+  Exclude<ClaudeHealthReason, "online">,
+  { label: string; color: string }
+> = {
+  "missing-key": { label: "No API key", color: "var(--color-amber)" },
+  "bad-format": { label: "Invalid key", color: "var(--color-red, #f87171)" },
+  "invalid-key": { label: "Key rejected", color: "var(--color-red, #f87171)" },
+  unreachable: { label: "Unreachable", color: "var(--color-amber)" },
+  error: { label: "API error", color: "var(--color-red, #f87171)" },
+};
+
 function statusFor(
   model: ModelOption,
   avail: AvailState,
@@ -93,8 +119,21 @@ function statusFor(
   if (avail.state === "loading") {
     return { label: "Checking…", color: "var(--color-ink-faint)", pulse: false };
   }
-  const online = avail.state === "ready" && avail.available[model.provider];
+  if (avail.state === "error") {
+    return { label: "Demo mode", color: "var(--color-amber)", pulse: false };
+  }
+
+  const online = avail.available[model.provider];
   if (online) return { label: "Online", color: "var(--color-lime)", pulse: true };
+
+  // Claude is verified with a real round-trip — surface the specific reason so
+  // the panel tells the truth (e.g. a rejected key reads "Key rejected", not
+  // the generic "Demo mode" we show for providers that simply lack a key).
+  if (model.provider === "anthropic" && avail.claude && avail.claude.reason !== "online") {
+    const failure = CLAUDE_FAILURE_LABELS[avail.claude.reason];
+    return { label: failure.label, color: failure.color, pulse: false };
+  }
+
   return { label: "Demo mode", color: "var(--color-amber)", pulse: false };
 }
 

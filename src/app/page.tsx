@@ -16,10 +16,14 @@ import { HermesPanel } from "@/components/HermesPanel";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModelsPanel } from "@/components/ModelsPanel";
 import { NotebookLMPanel } from "@/components/NotebookLMPanel";
+import { NotebookPanel } from "@/components/NotebookPanel";
 import { ParetoRouterPanel } from "@/components/ParetoRouterPanel";
 import { KanbanPanel } from "@/components/KanbanPanel";
 import { RufloPanel } from "@/components/RufloPanel";
 import { TwitterPanel } from "@/components/TwitterPanel";
+import { SecretsPanel } from "@/components/SecretsPanel";
+import { OmiPanel } from "@/components/OmiPanel";
+import { ObsidianPanel } from "@/components/ObsidianPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
@@ -73,10 +77,14 @@ export default function Page() {
     | "hermes"
     | "models"
     | "notebooklm"
+    | "notebook"
     | "router"
     | "kanban"
     | "ruflo"
     | "twitter"
+    | "secrets"
+    | "omi"
+    | "obsidian"
     | "goals"
     | "journal"
     | "guide"
@@ -94,10 +102,14 @@ export default function Page() {
     hermes: "hermes",
     models: "models",
     notebooklm: "notebooklm",
+    notebook: "notebook",
     router: "router",
     kanban: "kanban",
     ruflo: "ruflo",
     twitter: "twitter",
+    secrets: "secrets",
+    omi: "omi",
+    obsidian: "obsidian",
     goals: "goals",
     journal: "journal",
     guide: "guide",
@@ -157,6 +169,12 @@ export default function Page() {
           <div className={view === "notebooklm" ? "h-full p-4 lg:p-6" : "hidden"}>
             <NotebookLMPanel />
           </div>
+          {/* Notebook — notebooklm-mcp-backed library/chat/studio/assets,
+              synced to the Obsidian vault. Stays mounted so its active
+              notebook, chat, and in-flight studio jobs survive nav switches. */}
+          <div className={view === "notebook" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <NotebookPanel />
+          </div>
           <div className={view === "router" ? "h-full p-4 lg:p-6" : "hidden"}>
             <ParetoRouterPanel />
           </div>
@@ -175,6 +193,31 @@ export default function Page() {
           <div className={view === "twitter" ? "h-full p-4 lg:p-6" : "hidden"}>
             <TwitterPanel />
           </div>
+
+          {/* Secrets Vault — keys from the Tech-Dev 1Password vault, each
+              health-checked against its provider. Mounted only while active so
+              secrets are read (and providers probed) only on demand. */}
+          {view === "secrets" && (
+            <div className="h-full p-4 lg:p-6">
+              <SecretsPanel />
+            </div>
+          )}
+
+          {/* OMI — recent wearable memories from the synced Obsidian export.
+              Mounted on demand so the export is read only when opened. */}
+          {view === "omi" && (
+            <div className="h-full p-4 lg:p-6">
+              <OmiPanel />
+            </div>
+          )}
+
+          {/* Obsidian — browse/search/read the vault notes. Mounted on demand so
+              the vault is scanned only when opened. */}
+          {view === "obsidian" && (
+            <div className="h-full p-4 lg:p-6">
+              <ObsidianPanel />
+            </div>
+          )}
 
           {/* Placeholder modules — clearly "coming soon", never dead buttons. */}
           <div className={view === "workflows" ? "h-full p-4 lg:p-6" : "hidden"}>
