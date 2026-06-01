@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Bot, Coins, Gauge, Sparkles, Zap, Server, Workflow, Radio, Boxes, ScrollText } from "lucide-react";
+import { Bot, Coins, Gauge, Sparkles, Zap, Server, Radio } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { Sidebar } from "@/components/Sidebar";
 import { StatTile } from "@/components/StatTile";
@@ -23,6 +23,9 @@ import { TwitterPanel } from "@/components/TwitterPanel";
 import { SecretsPanel } from "@/components/SecretsPanel";
 import { OmiPanel } from "@/components/OmiPanel";
 import { ObsidianPanel } from "@/components/ObsidianPanel";
+import { MemoryPanel } from "@/components/MemoryPanel";
+import { LogsPanel } from "@/components/LogsPanel";
+import { WorkflowsPanel } from "@/components/WorkflowsPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
@@ -211,33 +214,31 @@ export default function Page() {
             </div>
           )}
 
-          {/* Placeholder modules — clearly "coming soon", never dead buttons. */}
-          <div className={view === "workflows" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <ComingSoon
-              title="Workflows"
-              description="Chain agents into automated, multi-step pipelines. Wiring this up is next on the roadmap."
-              icon={Workflow}
-            />
-          </div>
+          {/* Workflows, Memory, and Logs — real panels, each auto-saving to the
+              Obsidian vault. Mounted on demand so their data is fetched only when
+              opened. */}
+          {view === "workflows" && (
+            <div className="h-full p-4 lg:p-6">
+              <WorkflowsPanel />
+            </div>
+          )}
+          {view === "memory" && (
+            <div className="h-full p-4 lg:p-6">
+              <MemoryPanel />
+            </div>
+          )}
+          {view === "logs" && (
+            <div className="h-full p-4 lg:p-6">
+              <LogsPanel />
+            </div>
+          )}
+
+          {/* Telemetry remains a placeholder until it's wired to a metrics store. */}
           <div className={view === "telemetry" ? "h-full p-4 lg:p-6" : "hidden"}>
             <ComingSoon
               title="Telemetry"
               description="Live metrics, latency, and token usage across the fleet — streaming dashboards land here soon."
               icon={Radio}
-            />
-          </div>
-          <div className={view === "memory" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <ComingSoon
-              title="Memory"
-              description="Browse and search the fleet's long-term memory and embeddings. Not yet wired to a store."
-              icon={Boxes}
-            />
-          </div>
-          <div className={view === "logs" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <ComingSoon
-              title="Logs"
-              description="A searchable, filterable activity log across every agent and run is on the way."
-              icon={ScrollText}
             />
           </div>
           <div className={view === "settings" ? "h-full p-4 lg:p-6" : "hidden"}>

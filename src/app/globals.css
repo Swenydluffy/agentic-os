@@ -234,6 +234,21 @@ body {
   }
 }
 
+/* Spin + fade-in helpers (used by the Memory / Logs / Workflows panels) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
 button { cursor: pointer; }
 input, textarea { font-family: inherit; }
 

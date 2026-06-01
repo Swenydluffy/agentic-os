@@ -1,0 +1,13 @@
+{
+  "userProfile": [
+    { "id": "up-name", "title": "Name", "content": "Lucyanne" },
+    { "id": "up-role", "title": "Role", "content": "Operator & builder of the Agentic OS mission-control dashboard." },
+    { "id": "up-vault", "title": "Obsidian vault", "content": "/Users/lucyanne/Documents/Omi — all panels auto-save here under \"Agentic OS/\"." },
+    { "id": "up-stack", "title": "Preferred stack", "content": "Next.js (App Router) + React + TypeScript + Tailwind v4, glass UI." }
+  ],
+  "agentMemory": [
+    { "id": "am-coord", "title": "Coordination model", "content": "Memory-as-bus, lead-orchestrated phases. Subagents are stateless one-shot workers." },
+    { "id": "am-tone", "title": "Working style", "content": "Do exactly what's asked; surface mismatches with reality before acting. Verify with a build." },
+    { "id": "am-notebook", "title": "NotebookLM", "content": "Notebook panel is backed by a singleton notebooklm-mcp subprocess; replaced the old NotebookLM panel." }
+  ]
+}

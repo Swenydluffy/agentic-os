@@ -1,0 +1,59 @@
+{
+  "workflows": [
+    {
+      "id": "wf-instagram",
+      "name": "Post to Instagram",
+      "description": "Pull the latest puppy photo, caption it from the NotebookLM strategy, and publish a Reel.",
+      "steps": [
+        "Select best photo from Drive/Today",
+        "Generate caption from \"Puppy Instagram Strategy\" notebook",
+        "Schedule Reel via Instagram Graph API",
+        "Log result to Obsidian"
+      ],
+      "schedule": "Daily · 09:00",
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "wf-seo",
+      "name": "SEO Audit",
+      "description": "Crawl the marketing site, score Core Web Vitals, and file issues for regressions.",
+      "steps": [
+        "Crawl sitemap",
+        "Run Lighthouse on top 20 pages",
+        "Diff scores vs last week",
+        "Open issues for regressions"
+      ],
+      "schedule": "Weekly · Mon 06:00",
+      "enabled": false,
+      "lastRun": null
+    },
+    {
+      "id": "wf-obsidian",
+      "name": "Sync Obsidian",
+      "description": "Commit and push the Agentic OS vault folder to its backup git remote.",
+      "steps": [
+        "git add Agentic OS/",
+        "Commit with timestamp",
+        "Push to vault remote"
+      ],
+      "schedule": "Hourly",
+      "enabled": true,
+      "lastRun": null
+    },
+    {
+      "id": "wf-backup-keys",
+      "name": "Backup Keys",
+      "description": "Export secrets from the vault and encrypt a backup bundle to cold storage.",
+      "steps": [
+        "Read secrets from 1Password",
+        "Encrypt with age",
+        "Upload bundle to cold storage",
+        "Verify checksum"
+      ],
+      "schedule": "Weekly · Sun 02:00",
+      "enabled": false,
+      "lastRun": null
+    }
+  ]
+}

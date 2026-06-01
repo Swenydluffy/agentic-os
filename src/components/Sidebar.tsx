@@ -52,10 +52,10 @@ const NAV: NavItem[] = [
   { id: "goals", label: "Goals", icon: Target },
   { id: "journal", label: "Journal", icon: NotebookPen },
   { id: "guide", label: "Guide", icon: BookOpen },
-  { id: "workflows", label: "Workflows", icon: Workflow },
+  { id: "workflows", label: "Workflows", icon: Workflow, accent: "#60a5fa" },
   { id: "telemetry", label: "Telemetry", icon: Radio },
-  { id: "memory", label: "Memory", icon: Boxes },
-  { id: "logs", label: "Logs", icon: ScrollText },
+  { id: "memory", label: "Memory", icon: Boxes, accent: "#60a5fa" },
+  { id: "logs", label: "Logs", icon: ScrollText, accent: "#60a5fa" },
 ];
 
 export function Sidebar({
