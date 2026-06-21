@@ -1,299 +1,318 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { NotebookText, Search, FileText, Folder, Clock, RefreshCw } from "lucide-react";
-import { Markdown } from "@/components/Markdown";
+import { useCallback, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Search, RefreshCw, FolderOpen, FileText, ArrowLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ACCENT = "#8b5cf6";
+const ACCENT = "#a78bfa"; // purple for Obsidian
 
-interface NoteMeta {
+interface NoteEntry {
   path: string;
   name: string;
-  dir: string;
   size: number;
   mtime: string;
 }
 
-interface NoteContent {
+interface NotesListResponse {
+  ok: boolean;
+  root: string;
+  notes: NoteEntry[];
+  error?: string;
+}
+
+interface NoteContentResponse {
+  ok: boolean;
   path: string;
-  name: string;
   content: string;
-  size: number;
-  mtime: string;
-  truncated: boolean;
+  error?: string;
 }
 
-interface SearchHit {
-  path: string;
-  name: string;
-  matches: { line: number; text: string }[];
+// Group notes by folder prefix
+function groupNotes(notes: NoteEntry[]): Record<string, NoteEntry[]> {
+  const groups: Record<string, NoteEntry[]> = {};
+  for (const note of notes) {
+    const parts = note.path.split("/");
+    const folder = parts.length > 1 ? parts[0] : "__root__";
+    if (!groups[folder]) groups[folder] = [];
+    groups[folder].push(note);
+  }
+  return groups;
 }
 
-function fmtWhen(iso: string): string {
+function fmtDate(iso: string): string {
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const diff = Date.now() - d.getTime();
-  const day = 86_400_000;
-  if (diff < day) return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  if (diff < 7 * day) return `${Math.floor(diff / day)}d ago`;
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
 }
 
 function fmtSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}K`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}M`;
 }
 
-export function ObsidianPanel() {
-  const [notes, setNotes] = useState<NoteMeta[] | null>(null);
-  const [listError, setListError] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [hits, setHits] = useState<SearchHit[] | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [note, setNote] = useState<NoteContent | null>(null);
-  const [noteLoading, setNoteLoading] = useState(false);
-  const [noteError, setNoteError] = useState<string | null>(null);
+// Pinned Knowledge nodes shown first
+const PINNED_FOLDERS = ["Knowledge"];
 
-  const loadList = useCallback(async () => {
-    setListError(null);
+export function ObsidianPanel() {
+  const [notes, setNotes] = useState<NoteEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [selectedFolder, setSelectedFolder] = useState<string | null>("Knowledge");
+  const [selectedNote, setSelectedNote] = useState<NoteEntry | null>(null);
+  const [noteContent, setNoteContent] = useState<string | null>(null);
+  const [noteLoading, setNoteLoading] = useState(false);
+
+  const fetchNotes = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/obsidian", { cache: "no-store" });
-      const data = await res.json();
-      if (res.ok && data.ok) setNotes(data.notes as NoteMeta[]);
-      else setListError(data.error ?? "Couldn't list the vault.");
+      const data = (await res.json()) as NotesListResponse;
+      if (data.ok) {
+        setNotes(data.notes);
+      } else {
+        setError(data.error ?? "Failed to load notes");
+      }
     } catch {
-      setListError("Couldn't reach /api/obsidian.");
+      setError("Couldn't reach /api/obsidian");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    void loadList();
-  }, [loadList]);
-
-  // Debounced search.
-  useEffect(() => {
-    const q = query.trim();
-    if (!q) {
-      setHits(null);
-      return;
-    }
-    const id = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/obsidian?q=${encodeURIComponent(q)}`, { cache: "no-store" });
-        const data = await res.json();
-        if (res.ok && data.ok) setHits(data.hits as SearchHit[]);
-      } catch {
-        setHits([]);
-      }
-    }, 300);
-    return () => clearTimeout(id);
-  }, [query]);
-
-  const openNote = useCallback(async (path: string) => {
-    setSelected(path);
+  const openNote = useCallback(async (note: NoteEntry) => {
+    setSelectedNote(note);
+    setNoteContent(null);
     setNoteLoading(true);
-    setNoteError(null);
-    setNote(null);
     try {
-      const res = await fetch(`/api/obsidian?file=${encodeURIComponent(path)}`, { cache: "no-store" });
-      const data = await res.json();
-      if (res.ok && data.ok) setNote(data.note as NoteContent);
-      else setNoteError(data.error ?? "Couldn't read the note.");
+      const res = await fetch(`/api/obsidian?file=${encodeURIComponent(note.path)}`, { cache: "no-store" });
+      const data = (await res.json()) as NoteContentResponse;
+      if (data.ok) {
+        setNoteContent(data.content);
+      } else {
+        setNoteContent(`Error: ${data.error}`);
+      }
     } catch {
-      setNoteError("Couldn't reach /api/obsidian.");
+      setNoteContent("Error loading note content");
     } finally {
       setNoteLoading(false);
     }
   }, []);
 
-  // Group notes by top-level folder for the tree view.
-  const grouped = useMemo(() => {
-    if (!notes) return [];
-    const groups = new Map<string, NoteMeta[]>();
-    for (const n of notes) {
-      const top = n.dir === "" ? "" : n.dir.split("/")[0];
-      const arr = groups.get(top) ?? [];
-      arr.push(n);
-      groups.set(top, arr);
-    }
-    return [...groups.entries()].sort((a, b) => (a[0] === "" ? -1 : b[0] === "" ? 1 : a[0].localeCompare(b[0])));
-  }, [notes]);
+  useEffect(() => {
+    void fetchNotes();
+  }, [fetchNotes]);
 
-  const searching = query.trim().length > 0;
+  // Filter notes by query
+  const filtered = query.trim()
+    ? notes.filter(
+        (n) =>
+          n.name.toLowerCase().includes(query.toLowerCase()) ||
+          n.path.toLowerCase().includes(query.toLowerCase())
+      )
+    : notes;
 
-  return (
-    <div className="panel flex h-full overflow-hidden">
-      {/* Left: notes + search */}
-      <aside className="flex w-[320px] shrink-0 flex-col border-r border-white/5">
-        <header className="flex items-center gap-3 border-b border-white/5 px-4 py-4">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-xl"
-            style={{ background: `${ACCENT}22`, color: ACCENT }}
-          >
-            <NotebookText size={17} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-display text-base font-semibold tracking-wide text-white">Obsidian</h2>
-            <p className="truncate text-[11px] text-[var(--color-ink-faint)]">
-              {notes ? `${notes.length} notes` : "Loading…"}
-            </p>
-          </div>
+  const groups = groupNotes(filtered);
+
+  // Sort folders: pinned first, then alphabetically
+  const folders = Object.keys(groups).sort((a, b) => {
+    const aPin = PINNED_FOLDERS.indexOf(a);
+    const bPin = PINNED_FOLDERS.indexOf(b);
+    if (aPin !== -1 && bPin === -1) return -1;
+    if (bPin !== -1 && aPin === -1) return 1;
+    if (a === "__root__") return 1;
+    if (b === "__root__") return -1;
+    return a.localeCompare(b);
+  });
+
+  const folderNotes = selectedFolder ? (groups[selectedFolder] ?? []) : [];
+
+  // Note reader view
+  if (selectedNote) {
+    return (
+      <div className="panel flex h-full flex-col overflow-hidden">
+        <header className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
           <button
             type="button"
-            onClick={() => void loadList()}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-[var(--color-ink-dim)] transition hover:bg-white/[0.08] hover:text-white"
-            title="Refresh notes"
+            onClick={() => { setSelectedNote(null); setNoteContent(null); }}
+            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-[var(--color-ink-dim)] transition hover:bg-white/[0.08] hover:text-white"
           >
-            <RefreshCw size={13} />
+            <ArrowLeft size={13} />
+            Back
           </button>
-        </header>
-
-        <div className="border-b border-white/5 px-4 py-3">
-          <div className="relative">
-            <Search
-              size={14}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]"
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search all notes…"
-              className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white outline-none transition placeholder:text-[var(--color-ink-faint)] focus:border-white/25"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-2 py-2">
-          {listError ? (
-            <p className="px-2 py-3 font-mono text-xs text-[var(--color-amber)]">{listError}</p>
-          ) : searching ? (
-            <SearchResults hits={hits} selected={selected} onOpen={openNote} />
-          ) : (
-            grouped.map(([folder, items]) => (
-              <div key={folder || "(root)"} className="mb-2">
-                <div className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
-                  <Folder size={11} />
-                  {folder || "Vault root"}
-                </div>
-                {items.map((n) => (
-                  <NoteRow
-                    key={n.path}
-                    note={n}
-                    active={selected === n.path}
-                    onClick={() => void openNote(n.path)}
-                  />
-                ))}
-              </div>
-            ))
-          )}
-        </div>
-      </aside>
-
-      {/* Right: note content */}
-      <section className="flex min-w-0 flex-1 flex-col">
-        {note && !noteLoading ? (
-          <>
-            <header className="border-b border-white/5 px-6 py-4">
-              <h3 className="font-display text-lg font-semibold text-white">{note.name}</h3>
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] text-[var(--color-ink-faint)]">
-                <span className="truncate">{note.path}</span>
-                <span className="flex items-center gap-1">
-                  <Clock size={10} /> {fmtWhen(note.mtime)}
-                </span>
-                <span>{fmtSize(note.size)}</span>
-                {note.truncated && <span className="text-[var(--color-amber)]">truncated</span>}
-              </p>
-            </header>
-            <div className="flex-1 overflow-y-auto px-6 py-5 text-sm">
-              <Markdown source={note.content} />
-            </div>
-          </>
-        ) : noteLoading ? (
-          <Centered text="Opening note…" />
-        ) : noteError ? (
-          <Centered text={noteError} tone="amber" />
-        ) : (
-          <Centered text="Select a note to read it." icon />
-        )}
-      </section>
-    </div>
-  );
-}
-
-function NoteRow({ note, active, onClick }: { note: NoteMeta; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition",
-        active ? "bg-white/[0.07] text-white" : "text-[var(--color-ink-dim)] hover:bg-white/[0.03] hover:text-white",
-      )}
-    >
-      <FileText size={13} className="shrink-0 text-[var(--color-ink-faint)]" />
-      <span className="min-w-0 flex-1 truncate">{note.name}</span>
-      <span className="shrink-0 font-mono text-[10px] text-[var(--color-ink-faint)]">{fmtWhen(note.mtime)}</span>
-    </button>
-  );
-}
-
-function SearchResults({
-  hits,
-  selected,
-  onOpen,
-}: {
-  hits: SearchHit[] | null;
-  selected: string | null;
-  onOpen: (path: string) => void;
-}) {
-  if (hits === null) return <p className="px-2 py-3 font-mono text-xs text-[var(--color-ink-faint)]">Searching…</p>;
-  if (hits.length === 0) return <p className="px-2 py-3 font-mono text-xs text-[var(--color-ink-faint)]">No matches.</p>;
-  return (
-    <div className="space-y-1">
-      {hits.map((h) => (
-        <button
-          key={h.path}
-          type="button"
-          onClick={() => onOpen(h.path)}
-          className={cn(
-            "block w-full rounded-lg px-2 py-2 text-left transition",
-            selected === h.path ? "bg-white/[0.07]" : "hover:bg-white/[0.03]",
-          )}
-        >
-          <div className="flex items-center gap-2 text-sm text-white">
-            <FileText size={13} className="shrink-0 text-[var(--color-ink-faint)]" />
-            <span className="min-w-0 flex-1 truncate">{h.name}</span>
-          </div>
-          {h.matches.slice(0, 3).map((m, i) => (
-            <p key={i} className="mt-1 truncate pl-5 font-mono text-[11px] text-[var(--color-ink-faint)]">
-              <span className="text-[var(--color-ink-dim)]">L{m.line}</span> {m.text}
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate font-display text-sm font-semibold tracking-wide text-white">
+              {selectedNote.name.replace(/\.md$/, "")}
+            </h2>
+            <p className="text-[10px] text-[var(--color-ink-faint)]">
+              {selectedNote.path} · {fmtSize(selectedNote.size)} · {fmtDate(selectedNote.mtime)}
             </p>
-          ))}
-        </button>
-      ))}
-    </div>
-  );
-}
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {noteLoading ? (
+            <p className="font-mono text-xs text-[var(--color-ink-faint)]">Loading…</p>
+          ) : noteContent ? (
+            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-[var(--color-ink)]">
+              {noteContent}
+            </pre>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
 
-function Centered({ text, tone, icon }: { text: string; tone?: "amber"; icon?: boolean }) {
+  // Folder drill-down view
+  if (selectedFolder) {
+    return (
+      <div className="panel flex h-full flex-col overflow-hidden">
+        <header className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+          <button
+            type="button"
+            onClick={() => setSelectedFolder(null)}
+            className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-[var(--color-ink-dim)] transition hover:bg-white/[0.08] hover:text-white"
+          >
+            <ArrowLeft size={13} />
+            All Nodes
+          </button>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-sm font-semibold tracking-wide text-white">
+              {selectedFolder === "__root__" ? "Root Files" : selectedFolder}
+            </h2>
+            <p className="text-[10px] text-[var(--color-ink-faint)]">{folderNotes.length} notes</p>
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="space-y-2">
+            {folderNotes.map((note, i) => (
+              <motion.button
+                key={note.path}
+                type="button"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.2) }}
+                onClick={() => void openNote(note)}
+                className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.02] px-4 py-3 text-left transition hover:border-white/20 hover:bg-white/[0.05]"
+              >
+                <FileText size={14} style={{ color: ACCENT }} className="shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">
+                    {note.name.replace(/\.md$/, "")}
+                  </p>
+                  <p className="text-[10px] text-[var(--color-ink-faint)]">
+                    {fmtSize(note.size)} · {fmtDate(note.mtime)}
+                  </p>
+                </div>
+                <ChevronRight size={13} className="shrink-0 text-[var(--color-ink-faint)]" />
+              </motion.button>
+            ))}
+            {folderNotes.length === 0 && (
+              <p className="font-mono text-xs text-[var(--color-ink-faint)]">No notes in this folder.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Root folder browser
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center"
-    >
-      {icon && <NotebookText size={28} className="text-[var(--color-ink-faint)]" />}
-      <p
-        className={cn(
-          "font-mono text-xs",
-          tone === "amber" ? "text-[var(--color-amber)]" : "text-[var(--color-ink-faint)]",
+    <div className="panel mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
+      <header className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+        <span
+          className="flex h-10 w-10 items-center justify-center rounded-xl"
+          style={{ background: `${ACCENT}22`, color: ACCENT }}
+        >
+          <BookOpen size={18} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-lg font-semibold tracking-wide text-white">Obsidian Brain</h2>
+          <p className="text-xs text-[var(--color-ink-dim)]">
+            {loading ? "Loading…" : `${notes.length} notes across ${folders.length} nodes`}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void fetchNotes()}
+          disabled={loading}
+          className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-[var(--color-ink-dim)] transition hover:bg-white/[0.08] hover:text-white disabled:opacity-50"
+        >
+          <RefreshCw size={13} className={cn(loading && "animate-spin")} />
+          Refresh
+        </button>
+      </header>
+
+      {/* Search */}
+      <div className="border-b border-white/5 px-5 py-4">
+        <div className="relative">
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-ink-faint)]"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search notes…"
+            className="w-full rounded-xl border border-white/10 bg-white/[0.03] py-2 pl-9 pr-3 text-sm text-white outline-none transition placeholder:text-[var(--color-ink-faint)] focus:border-white/25"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        {error ? (
+          <div className="rounded-2xl border border-[var(--color-amber)]/30 bg-[var(--color-amber)]/5 p-4">
+            <p className="text-sm font-medium text-white">Obsidian unavailable</p>
+            <p className="mt-1 font-mono text-xs leading-relaxed text-[var(--color-ink-dim)]">{error}</p>
+          </div>
+        ) : loading ? (
+          <p className="font-mono text-xs text-[var(--color-ink-faint)]">Loading vault…</p>
+        ) : (
+          <div className="space-y-2">
+            {folders.map((folder, i) => {
+              const folderItems = groups[folder];
+              const isPinned = PINNED_FOLDERS.includes(folder);
+              const label = folder === "__root__" ? "Root Files" : folder;
+              return (
+                <motion.button
+                  key={folder}
+                  type="button"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: Math.min(i * 0.04, 0.3) }}
+                  onClick={() => setSelectedFolder(folder)}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition",
+                    isPinned
+                      ? "border-[#a78bfa]/30 bg-[#a78bfa]/5 hover:border-[#a78bfa]/50 hover:bg-[#a78bfa]/10"
+                      : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.05]"
+                  )}
+                >
+                  <FolderOpen
+                    size={16}
+                    className="shrink-0"
+                    style={{ color: isPinned ? ACCENT : "#94a3b8" }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className={cn("text-sm font-medium", isPinned ? "text-white" : "text-[var(--color-ink)]")}>
+                      {label}
+                      {isPinned && (
+                        <span className="ml-2 rounded-full border border-[#a78bfa]/40 px-1.5 py-0.5 text-[9px] uppercase tracking-widest" style={{ color: ACCENT }}>
+                          pinned
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-[10px] text-[var(--color-ink-faint)]">{folderItems.length} notes</p>
+                  </div>
+                  <ChevronRight size={13} className="shrink-0 text-[var(--color-ink-faint)]" />
+                </motion.button>
+              );
+            })}
+          </div>
         )}
-      >
-        {text}
-      </p>
-    </motion.div>
+      </div>
+    </div>
   );
 }

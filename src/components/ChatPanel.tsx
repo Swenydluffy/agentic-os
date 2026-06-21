@@ -1,7 +1,9 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, StopCircle, Bot, User } from "lucide-react";
+import { Send, Sparkles, StopCircle, Bot, User, Zap } from "lucide-react";
+import { WorkerDispatch } from "./WorkerDispatch";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { MicButton, type MicHandle } from "./MicButton";
 import { getAgent } from "@/lib/agents";
@@ -20,6 +22,7 @@ const STARTERS = [
 ];
 
 export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
+  const [activeTab, setActiveTab] = useState<"chat" | "dispatch">("chat");
   const [messages, setMessages] = useState<Msg[]>([
     {
       id: "boot",
@@ -155,6 +158,33 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Tab toggle */}
+          <div className="flex rounded-lg border border-white/10 bg-black/20 p-0.5">
+            <button
+              onClick={() => setActiveTab("chat")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
+                activeTab === "chat"
+                  ? "bg-white/10 text-white"
+                  : "text-[var(--color-ink-dim)] hover:text-white"
+              )}
+            >
+              <Sparkles size={11} />
+              Chat
+            </button>
+            <button
+              onClick={() => setActiveTab("dispatch")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
+                activeTab === "dispatch"
+                  ? "bg-white/10 text-white"
+                  : "text-[var(--color-ink-dim)] hover:text-white"
+              )}
+            >
+              <Zap size={11} />
+              Dispatch
+            </button>
+          </div>
           <AutoSpeakToggle enabled={autoSpeak} onToggle={() => setAutoSpeak(!autoSpeak)} supported={tts.isSupported} />
           <span
             className="hidden items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-[var(--color-ink-faint)] sm:inline-flex"
@@ -168,6 +198,13 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
           </span>
         </div>
       </div>
+
+      {/* Dispatch tab */}
+      {activeTab === "dispatch" && <WorkerDispatch />}
+
+      {/* Chat tab */}
+      {activeTab === "chat" && (
+        <>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
         <AnimatePresence initial={false}>
@@ -274,6 +311,8 @@ export function ChatPanel({ pinnedAgent }: { pinnedAgent?: string | null }) {
           </button>
         )}
       </form>
+      </>
+      )}
     </div>
   );
 }

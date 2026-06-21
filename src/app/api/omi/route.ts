@@ -1,34 +1,32 @@
 import { NextRequest } from "next/server";
-import { queryOmi, OMI_TAGS, type OmiTag, type OmiErrorCode } from "@/lib/omi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function statusForCode(code?: OmiErrorCode): number {
-  switch (code) {
-    case "missing-file":
-      return 404;
-    case "read-error":
-    default:
-      return 500;
-  }
-}
+const MIND_INSURANCE_URL = "https://app.wynneops.com";
+const USER_ID = "8a5df513-41a2-4644-8865-38a357b17c77";
 
-/**
- * GET /api/omi?q=<text>&tag=<tag>&limit=<n>
- * Returns recent OMI memories (newest first) from the synced Obsidian export,
- * optionally filtered by free-text query and/or derived category tag.
- */
 export async function GET(req: NextRequest) {
-  const sp = req.nextUrl.searchParams;
-  const q = sp.get("q")?.trim() || undefined;
+  const { searchParams } = new URL(req.url);
+  const q = searchParams.get("q") || "";
+  const tag = searchParams.get("tag") || "";
+  const limit = searchParams.get("limit") || "10";
 
-  const tagParam = sp.get("tag")?.trim();
-  const tag = OMI_TAGS.includes(tagParam as OmiTag) ? (tagParam as OmiTag) : undefined;
+  const params = new URLSearchParams({ userId: USER_ID, limit });
+  if (q) params.set("q", q);
+  if (tag) params.set("tag", tag);
 
-  const limitRaw = Number(sp.get("limit"));
-  const limit = Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : undefined;
-
-  const result = await queryOmi({ q, tag, limit });
-  return Response.json(result, { status: result.ok ? 200 : statusForCode(result.code) });
+  try {
+    const res = await fetch(
+      `${MIND_INSURANCE_URL}/api/memories?${params.toString()}`,
+      { cache: "no-store" }
+    );
+    const data = await res.json();
+    return Response.json({ ok: true, ...data });
+  } catch (err) {
+    return Response.json(
+      { memories: [], total: 0, error: String(err) },
+      { status: 502 }
+    );
+  }
 }

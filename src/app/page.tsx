@@ -22,7 +22,8 @@ import { RufloPanel } from "@/components/RufloPanel";
 import { TwitterPanel } from "@/components/TwitterPanel";
 import { SecretsPanel } from "@/components/SecretsPanel";
 import { OmiPanel } from "@/components/OmiPanel";
-import { ObsidianPanel } from "@/components/ObsidianPanel";
+
+import { PaperclipPanel } from "@/components/PaperclipPanel";
 import { MemoryPanel } from "@/components/MemoryPanel";
 import { LogsPanel } from "@/components/LogsPanel";
 import { WorkflowsPanel } from "@/components/WorkflowsPanel";
@@ -85,6 +86,7 @@ export default function Page() {
     | "twitter"
     | "secrets"
     | "omi"
+    | "paperclip"
     | "obsidian"
     | "goals"
     | "journal"
@@ -109,6 +111,7 @@ export default function Page() {
     twitter: "twitter",
     secrets: "secrets",
     omi: "omi",
+    paperclip: "paperclip",
     obsidian: "obsidian",
     goals: "goals",
     journal: "journal",
@@ -206,11 +209,49 @@ export default function Page() {
             </div>
           )}
 
-          {/* Obsidian — browse/search/read the vault notes. Mounted on demand so
-              the vault is scanned only when opened. */}
-          {view === "obsidian" && (
+          {/* Paperclip — AI company OS / agent orchestration panel.
+              Mounted on demand so the status probe runs only when opened. */}
+          {view === "paperclip" && (
             <div className="h-full p-4 lg:p-6">
-              <ObsidianPanel />
+              <PaperclipPanel />
+            </div>
+          )}
+
+          {/* Obsidian launcher — opens native Obsidian app on Mac */}
+          {view === "obsidian" && (
+            <div className="panel flex h-full flex-col items-center justify-center gap-6">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "#7c3aed22" }}>
+                  <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+                    <path d="M50 5L85 25V75L50 95L15 75V25L50 5Z" stroke="#7c3aed" strokeWidth="4" fill="#7c3aed11"/>
+                    <path d="M50 5L35 35L15 25" stroke="#7c3aed" strokeWidth="3"/>
+                    <path d="M50 5L65 35L85 25" stroke="#a78bfa" strokeWidth="3"/>
+                    <path d="M35 35L50 95" stroke="#7c3aed" strokeWidth="3"/>
+                    <path d="M65 35L50 95" stroke="#a78bfa" strokeWidth="3"/>
+                    <path d="M35 35L65 35" stroke="#c4b5fd" strokeWidth="3"/>
+                  </svg>
+                </div>
+                <h2 className="font-display text-2xl font-semibold text-white">Your Second Brain</h2>
+                <p className="max-w-sm text-sm text-[var(--color-ink-dim)]">
+                  Graph view, backlinks, canvas, and search live in Obsidian — where they belong.
+                </p>
+              </div>
+              <a
+                href="obsidian://open"
+                className="flex items-center gap-3 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-8 py-4 text-white transition hover:bg-purple-500/20 hover:border-purple-500/50"
+              >
+                <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
+                  <path d="M50 5L85 25V75L50 95L15 75V25L50 5Z" stroke="#a78bfa" strokeWidth="5" fill="#7c3aed22"/>
+                  <path d="M50 5L35 35L15 25" stroke="#7c3aed" strokeWidth="4"/>
+                  <path d="M50 5L65 35L85 25" stroke="#a78bfa" strokeWidth="4"/>
+                  <path d="M35 35L50 95" stroke="#7c3aed" strokeWidth="4"/>
+                  <path d="M65 35L50 95" stroke="#a78bfa" strokeWidth="4"/>
+                </svg>
+                <span className="font-semibold">Open in Obsidian</span>
+              </a>
+              <p className="font-mono text-[11px] text-[var(--color-ink-faint)]">
+                Vault: ~/Documents/Omi
+              </p>
             </div>
           )}
 
@@ -248,7 +289,7 @@ export default function Page() {
           <div className={view === "dashboard" ? "h-full" : "hidden"}>
           <div className="grid h-full grid-cols-12 gap-4 overflow-y-auto p-4 lg:p-6">
             <motion.div
-              initial={false}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
               className="col-span-12 flex items-center justify-between"
