@@ -1,0 +1,80 @@
+{
+  "vault": {
+    "path": "/Users/lucyanne/Documents/Omi",
+    "folder": "Agentic OS"
+  },
+  "models": {
+    "opus": "claude-opus-4-7",
+    "sonnet": "claude-sonnet-4-6",
+    "haiku": "claude-haiku-4-5-20251001"
+  },
+  "agents": [
+    {
+      "id": "orchestrator",
+      "name": "Orchestrator",
+      "model": "claude-sonnet-4-6",
+      "enabled": true
+    },
+    {
+      "id": "researcher",
+      "name": "Researcher",
+      "model": "claude-sonnet-4-6",
+      "enabled": true
+    },
+    {
+      "id": "architect",
+      "name": "Architect",
+      "model": "claude-sonnet-4-6",
+      "enabled": true
+    },
+    {
+      "id": "coder",
+      "name": "Coder",
+      "model": "claude-sonnet-4-6",
+      "enabled": true
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "model": "claude-haiku-4-5-20251001",
+      "enabled": true
+    },
+    {
+      "id": "tester",
+      "name": "Tester",
+      "model": "claude-haiku-4-5-20251001",
+      "enabled": true
+    },
+    {
+      "id": "security",
+      "name": "Sentinel",
+      "model": "claude-sonnet-4-6",
+      "enabled": true
+    },
+    {
+      "id": "ops",
+      "name": "Ops",
+      "model": "claude-sonnet-4-6",
+      "enabled": true
+    },
+    {
+      "id": "memory",
+      "name": "Memoria",
+      "model": "claude-haiku-4-5-20251001",
+      "enabled": true
+    },
+    {
+      "id": "scout",
+      "name": "Scout",
+      "model": "claude-haiku-4-5-20251001",
+      "enabled": true
+    }
+  ],
+  "detectedTools": [
+    "claude"
+  ],
+  "hermes": {
+    "url": "https://hermes-api.wynneops.com",
+    "token": "DDErLE3z6ZWQcxFI4EoNSqsjhpZOhQIPiYT0v8In8Po1XEf3"
+  }
+}

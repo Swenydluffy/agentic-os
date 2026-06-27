@@ -187,6 +187,24 @@ function ModelCard({
             <p className="truncate text-[11px] text-[var(--color-ink-faint)]">
               {model.providerLabel}
             </p>
+            {/* Strength tags — data-driven from model.strengths, updatable by Phase 4 rating system */}
+            {model.strengths && model.strengths.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {model.strengths.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded px-1.5 py-0.5 text-[9px] font-medium leading-none tracking-wide"
+                    style={{
+                      background: `${model.color}18`,
+                      color: `${model.color}cc`,
+                      border: `1px solid ${model.color}30`,
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

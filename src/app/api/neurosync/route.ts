@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 
 // Reads intake stats from the server-side notes server
 const NOTES_URL = process.env.NOTES_SERVER_URL ?? "http://31.220.63.57:9120";
-const NOTES_TOKEN = process.env.NOTES_TOKEN ?? "notes-wynneops-2026";
 
 interface IntakeItem {
   id: string;
@@ -62,7 +61,7 @@ export async function GET(req: NextRequest) {
   try {
     // Fetch all notes from server, filter to Intake/ folder
     const notesRes = await fetch(`${NOTES_URL}/api/notes?limit=500`, {
-      headers: { "x-notes-token": NOTES_TOKEN },
+      headers: { "x-notes-token": process.env.NOTES_TOKEN ?? "notes-wynneops-2026" },
       signal: AbortSignal.timeout(8000),
     });
 
@@ -104,7 +103,7 @@ export async function GET(req: NextRequest) {
         try {
           const fileRes = await fetch(
             `${NOTES_URL}/api/notes?file=${encodeURIComponent(note.path)}`,
-            { headers: { "x-notes-token": NOTES_TOKEN }, signal: AbortSignal.timeout(5000) }
+            { headers: { "x-notes-token": process.env.NOTES_TOKEN ?? "notes-wynneops-2026" }, signal: AbortSignal.timeout(5000) }
           );
           if (fileRes.ok) {
             const fd = await fileRes.json() as { content?: string };

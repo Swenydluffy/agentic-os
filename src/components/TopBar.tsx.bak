@@ -1,0 +1,147 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { Search, Sparkles, Wifi } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useActiveModel } from "@/lib/useActiveModel";
+
+// ─── Clock ────────────────────────────────────────────────────────────────────
+function useNow() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+// ─── Live cost data (same source as Model Router rail) ────────────────────────
+type CostData = {
+  total?: number;
+  burn_rate?: { cost_per_hour?: number };
+};
+
+function useCost() {
+  const [data, setData] = useState<CostData | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    async function fetch_() {
+      try {
+        const r = await fetch("/api/cost");
+        if (r.ok && mounted) setData(await r.json());
+      } catch { /* silent */ }
+    }
+    void fetch_();
+    const iv = setInterval(fetch_, 30_000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
+  return data;
+}
+
+function fmt$(n: number) {
+  if (n >= 100) return `$${n.toFixed(2)}`;
+  if (n >= 1)   return `$${n.toFixed(3)}`;
+  return `$${n.toFixed(4)}`;
+}
+
+// ─── TopBar ───────────────────────────────────────────────────────────────────
+export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
+  const now   = useNow();
+  const cost  = useCost();
+  const { model } = useActiveModel();
+
+  const time = now
+    ? now.toLocaleTimeString("en-US", { hour12: false })
+    : "--:--:--";
+  const date = now
+    ? now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+    : "";
+
+  // Estimated today's spend from burn rate
+  const cph       = cost?.burn_rate?.cost_per_hour ?? 0;
+  const est24h    = cph * 24;
+  const totalSp   = cost?.total ?? 0;
+  const spendLabel = cph > 0
+    ? `~${fmt$(est24h)} today`
+    : totalSp > 0
+    ? `${fmt$(totalSp)} total`
+    : null;
+
+  return (
+    <motion.header
+      initial={{ y: -16, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
+      className="relative z-30 flex h-14 items-center gap-4 border-b border-white/5 px-5 backdrop-blur-xl"
+    >
+      {/* Logo + title */}
+      <div className="flex items-center gap-3 shrink-0">
+        <Logo />
+        <div className="flex flex-col leading-none">
+          <span className="text-[10px] uppercase tracking-[0.3em] text-[var(--color-ink-faint)]">
+            Mission Control
+          </span>
+          <span className="text-sm font-semibold tracking-wide hue">C · M · C</span>
+        </div>
+      </div>
+
+      <div className="mx-2 h-7 w-px bg-white/10 shrink-0" />
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Live spend badge */}
+      {spendLabel && (
+        <div
+          className="hidden items-center gap-2 rounded-full border px-3 py-1.5 md:flex"
+          style={{
+            borderColor: "rgba(245,158,11,0.25)",
+            background: "rgba(245,158,11,0.06)",
+          }}
+        >
+          <span className="text-[10px] text-[#6b7280]">SPEND</span>
+          <span className="font-mono text-[12px] font-semibold text-[#f59e0b]">
+            {spendLabel}
+          </span>
+        </div>
+      )}
+
+      {/* Active model badge */}
+      <div
+        className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 md:flex shrink-0"
+        title={`Active model · ${model.name} (${model.providerLabel})`}
+      >
+        <span
+          className="h-2 w-2 rounded-full shrink-0"
+          style={{ background: model.color, boxShadow: `0 0 8px ${model.color}` }}
+        />
+        <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--color-ink-dim)]">
+          {model.shortName}
+        </span>
+      </div>
+
+      {/* Online + clock */}
+      <div className="hidden items-center gap-3 md:flex shrink-0">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1.5">
+          <Wifi size={11} className="text-[var(--color-lime)]" />
+          <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--color-ink-dim)]">Online</span>
+        </span>
+        <div className="flex flex-col items-end leading-none">
+          <span className="font-mono text-[13px] tabular text-white">{time}</span>
+          <span className="text-[9px] uppercase tracking-[0.25em] text-[var(--color-ink-faint)]">{date}</span>
+        </div>
+      </div>
+    </motion.header>
+  );
+}
+
+function Logo() {
+  return (
+    <div className="relative h-8 w-8 shrink-0">
+      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[var(--color-cyan)] via-[var(--color-violet)] to-[var(--color-magenta)] opacity-90 blur-[2px]" />
+      <div className="absolute inset-[2px] rounded-[10px] bg-[#04060d]" />
+      <Sparkles size={14} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white" />
+    </div>
+  );
+}

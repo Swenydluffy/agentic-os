@@ -13,12 +13,14 @@ export const dynamic = "force-dynamic";
 
 type IncomingMessage = { role: "user" | "assistant"; content: string };
 
-const PROVIDERS: ReadonlySet<ProviderId> = new Set([
+const PROVIDERS: ReadonlySet<string> = new Set<string>([
   "anthropic",
   "openai",
+  "google",
   "xai",
   "deepseek",
-  "groq",
+  "meta",
+  "openrouter", // ← AI Console uses this to pass full model IDs (e.g. x-ai/grok-4.3)
 ]);
 
 function isProvider(v: unknown): v is ProviderId {
@@ -53,22 +55,28 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Bad request" }), { status: 400 });
   }
 
-  const provider: ProviderId = isProvider(body.provider) ? body.provider : "anthropic";
+  const provider = isProvider(body.provider) ? body.provider : "anthropic";
 
   const system =
     body.system ??
-    `You are Claude, currently embedded as the central intelligence of a local mission-control dashboard called "C.M.C.". You coordinate a fleet of specialized AI agents on the user's machine. Respond with warmth, precision, and a hint of cinematic flair — think helpful copilot at a sci-fi command console. Keep responses tight unless detail is asked for.`;
+    `You are an AI assistant embedded in a local mission-control dashboard called "C.M.C.". You coordinate a fleet of specialized AI agents on the user's machine. Respond with warmth, precision, and a hint of cinematic flair — think helpful copilot at a sci-fi command console. Keep responses tight unless detail is asked for.`;
 
-  // Non-Anthropic providers share an OpenAI-compatible chat-completions API.
-  if (provider !== "anthropic") {
-    return handleOpenAICompatible(provider, body.messages, system, body.model);
+  // ── OpenRouter fast-path: AI Console passes full model IDs (e.g. x-ai/grok-4.3) ──
+  if ((provider as string) === "openrouter") {
+    return handleOpenRouter(body.messages, system, body.model);
   }
 
+  // Non-Anthropic providers use OpenAI-compatible API via their own keys
+  if (provider !== "anthropic") {
+    return handleOpenAICompatible(provider as Exclude<ProviderId, "anthropic">, body.messages, system, body.model);
+  }
+
+  // ── Anthropic direct path ──────────────────────────────────────────────────
   if (!apiKey) {
     const last = body.messages[body.messages.length - 1]?.content ?? "";
     const name = body.agentName ?? "Claude";
     const opener = DEMO_OPENERS[name] ?? `${name} here.`;
-    const demo = `${opener}\n\nI caught: “${last.slice(0, 200)}” — and I'd love to actually run with it.\n\nI'm in demo mode right now (no API key). Drop a key into .env.local and I'll come fully online:\n  ANTHROPIC_API_KEY=sk-ant-…`;
+    const demo = `${opener}\n\nI caught: "${last.slice(0, 200)}" — and I'd love to actually run with it.\n\nI'm in demo mode right now (no API key). Drop a key into .env.local and I'll come fully online:\n  ANTHROPIC_API_KEY=sk-…`;
     return streamPlainText(demo);
   }
 
@@ -118,10 +126,109 @@ export async function POST(req: NextRequest) {
 }
 
 /**
+ * OpenRouter fast-path for AI Console.
+ * Accepts the full model ID as-is (e.g. "x-ai/grok-4.3", "google/gemini-3.1-pro-preview").
+ * Uses OPENROUTER_API_KEY — same key the Model Router rail uses.
+ */
+async function handleOpenRouter(
+  messages: IncomingMessage[],
+  system: string,
+  modelId?: string,
+) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  const model = modelId?.trim() || "anthropic/claude-sonnet-4-5";
+
+  if (!apiKey) {
+    const last = messages[messages.length - 1]?.content ?? "";
+    const demo = `OpenRouter not connected.\n\nI caught: "${last.slice(0, 200)}"\n\nAdd OPENROUTER_API_KEY to .env.local to enable all 7 console models.`;
+    return streamPlainText(demo);
+  }
+
+  try {
+    const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://mission.wynneops.com",
+        "X-Title": "Mission Control AI Console",
+      },
+      body: JSON.stringify({
+        model,
+        stream: true,
+        max_tokens: 1024,
+        messages: [
+          { role: "system", content: system },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ],
+      }),
+    });
+
+    if (!upstream.ok || !upstream.body) {
+      const detail = await upstream.text().catch(() => `HTTP ${upstream.status}`);
+      return new Response(
+        JSON.stringify({ error: `OpenRouter [${model}]: ${detail.slice(0, 500)}` }),
+        { status: 502 },
+      );
+    }
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const reader = upstream.body.getReader();
+
+    const readable = new ReadableStream({
+      async start(controller) {
+        let buffer = "";
+        try {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            const frames = buffer.split("\n\n");
+            buffer = frames.pop() ?? "";
+            for (const frame of frames) {
+              for (const line of frame.split("\n")) {
+                const trimmed = line.trim();
+                if (!trimmed.startsWith("data:")) continue;
+                const data = trimmed.slice(5).trim();
+                if (data === "[DONE]") continue;
+                try {
+                  const json = JSON.parse(data) as {
+                    choices?: Array<{ delta?: { content?: string } }>;
+                  };
+                  const text = json.choices?.[0]?.delta?.content;
+                  if (text) controller.enqueue(encoder.encode(text));
+                } catch {
+                  /* skip keep-alives / partial frames */
+                }
+              }
+            }
+          }
+          controller.close();
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          controller.enqueue(encoder.encode(`\n\n[stream error: ${msg}]`));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ error: msg }), { status: 500 });
+  }
+}
+
+/**
  * Stream a reply from an OpenAI-compatible provider (OpenAI, xAI, DeepSeek).
- * All three speak the same `/chat/completions` SSE protocol, so one client
- * serves them. Without the provider's API key we fall back to a clear demo
- * stream rather than pretending to be connected.
  */
 async function handleOpenAICompatible(
   provider: Exclude<ProviderId, "anthropic">,
@@ -141,7 +248,7 @@ async function handleOpenAICompatible(
       option.name === option.providerLabel
         ? option.name
         : `${option.name} (${option.providerLabel})`;
-    const demo = `${label} selected.\n\nI caught: “${last.slice(0, 200)}” — and I'd love to actually run with it.\n\nThis provider isn't connected in this build (no API key). Add one to .env.local and ${option.name} comes fully online:\n  ${cfg.envKey}=…\n\nUntil then, Claude (Anthropic) is the wired-in default.`;
+    const demo = `${label} selected.\n\nI caught: "${last.slice(0, 200)}" — and I'd love to actually run with it.\n\nThis provider isn't connected in this build (no API key). Add one to .env.local and ${option.name} comes fully online:\n  ${cfg.envKey}=…\n\nUntil then, Claude (Anthropic) is the wired-in default.`;
     return streamPlainText(demo);
   }
 
@@ -184,7 +291,6 @@ async function handleOpenAICompatible(
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
 
-            // SSE frames are separated by blank lines; parse complete ones.
             const frames = buffer.split("\n\n");
             buffer = frames.pop() ?? "";
             for (const frame of frames) {

@@ -1,0 +1,668 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { Bot, Coins, Gauge, Sparkles, Zap, Server, Radio } from "lucide-react";
+import { TopBar } from "@/components/TopBar";
+import Sidebar from "@/components/Sidebar";
+import { StatTile } from "@/components/StatTile";
+import { ChatPanel } from "@/components/ChatPanel";
+import { AgentChat } from "@/components/AgentChat";
+import { GoalsPanel } from "@/components/GoalsPanel";
+import { JournalPanel } from "@/components/JournalPanel";
+import { GuidePanel } from "@/components/GuidePanel";
+import { HermesPanel } from "@/components/HermesPanel";
+import { ComingSoon } from "@/components/ComingSoon";
+import { ModelRouterRail } from "@/components/ModelRouterRail";
+import { RufloStatusStrip } from "@/components/RufloStatusStrip";
+import { NotebookPanel } from "@/components/NotebookPanel";
+import { ParetoRouterPanel } from "@/components/ParetoRouterPanel";
+import { KanbanPanel } from "@/components/KanbanPanel";
+import { TwitterPanel } from "@/components/TwitterPanel";
+import { SecretsPanel } from "@/components/SecretsPanel";
+import { OmiPanel } from "@/components/OmiPanel";
+import { TravelPanel } from "@/components/TravelPanel";
+import { FamilyPanel } from "@/components/FamilyPanel";
+import { EntertainmentPanel } from "@/components/EntertainmentPanel";
+import { MusicPanel } from "@/components/MusicPanel";
+
+import { PaperclipPanel } from "@/components/PaperclipPanel";
+import { MemoryPanel } from "@/components/MemoryPanel";
+import { LogsPanel } from "@/components/LogsPanel";
+import { WorkflowsPanel } from "@/components/WorkflowsPanel";
+import { SettingsPanel } from "@/components/SettingsPanel";
+import { ActivityLog } from "@/components/ActivityLog";
+import { NeuralPanel } from "@/components/NeuralPanel";
+import { CostMonitorPanel } from "@/components/CostMonitorPanel";
+import { MemoryPalacePanel } from "@/components/MemoryPalacePanel";
+import { BusinessPanel } from "@/components/BusinessPanel";
+import { CalendarPanel } from "@/components/CalendarPanel";
+import { CommandPalette } from "@/components/CommandPalette";
+
+function drift(seed: number, n = 24, base = 50, range = 30) {
+  const arr: number[] = [];
+  let s = seed;
+  let v = base;
+  for (let i = 0; i < n; i++) {
+    s = (s * 9301 + 49297) % 233280;
+    v += (s / 233280 - 0.5) * range * 0.5;
+    v = Math.max(base - range, Math.min(base + range, v));
+    arr.push(v);
+  }
+  return arr;
+}
+
+export default function Page() {
+  const [activeNav, setActiveNav] = useState("mission");
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      } else if (e.key === "Escape") {
+        setPaletteOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const sparks = useMemo(
+    () => ({
+      agents: drift(11, 24, 9, 4),
+      tasks: drift(23, 24, 140, 80),
+      tokens: drift(41, 24, 60, 40),
+      latency: drift(59, 24, 420, 220),
+    }),
+    []
+  );
+
+  type View =
+    | "dashboard" | "agents" | "chat" | "hermes" | "models" | "notebook"
+    | "router" | "kanban" | "ruflo" | "twitter" | "secrets" | "omi"
+    | "neurosync" | "paperclip" | "obsidian" | "goals" | "journal" | "guide"
+    | "workflows" | "telemetry" | "memory" | "logs" | "settings" | "cost"
+    | "security" | "photos" | "properties" | "maintenance" | "medellin"
+    | "chickens" | "mindinsurance" | "sweeney" | "entertainment" | "music"
+    | "travel" | "family"
+    | "translator" | "debate" | "speech" | "gratitude" | "habits"
+    | "hurricane" | "biz-intelligence" | "neighborhood" | "legal" | "meetings"
+    | "negotiator" | "content" | "social" | "property-tracker" | "contractor"
+    | "competition" | "affiliate" | "reputation" | "tax" | "airbnb"
+    | "emailwriter" | "tutorial" | "quickref" | "whatsnew";
+
+  // Each nav id maps to a panel; anything unknown falls back to the dashboard.
+  const PANELS: Record<string, View> = {
+    mission: "dashboard", dashboard: "dashboard",
+    hermes: "hermes", agents: "agents", chat: "chat", models: "dashboard",
+    notebook: "notebook", router: "router", kanban: "kanban", ruflo: "dashboard",
+    twitter: "twitter", secrets: "secrets", omi: "omi", neurosync: "neurosync",
+    paperclip: "paperclip", obsidian: "obsidian", goals: "goals",
+    journal: "journal", guide: "guide", workflows: "workflows",
+    telemetry: "telemetry", memory: "memory", logs: "logs",
+    settings: "settings", cost: "cost", security: "security",
+    photos: "photos", properties: "properties", maintenance: "maintenance",
+    medellin: "medellin", chickens: "chickens", mindinsurance: "mindinsurance",
+    sweeney: "sweeney", entertainment: "entertainment", music: "music",
+    travel: "travel", family: "family",
+    translator: "translator", debate: "debate", speech: "speech",
+    gratitude: "gratitude", habits: "habits", hurricane: "hurricane",
+    "biz-intelligence": "biz-intelligence", neighborhood: "neighborhood",
+    legal: "legal", meetings: "meetings", negotiator: "negotiator",
+    content: "content", social: "social", "property-tracker": "property-tracker",
+    contractor: "contractor", competition: "competition", affiliate: "affiliate",
+    reputation: "reputation", tax: "tax", airbnb: "airbnb",
+    emailwriter: "emailwriter", tutorial: "tutorial", quickref: "quickref",
+    whatsnew: "whatsnew",
+  };
+  const view: View = PANELS[activeNav] ?? "dashboard";
+
+  function openAgent(id: string) {
+    setSelectedAgent(id);
+    setActiveNav("agents");
+  }
+
+  return (
+    <main className="relative z-10 flex h-screen w-screen overflow-hidden">
+      <Sidebar activeView={activeNav} onViewChange={setActiveNav} />
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar onOpenPalette={() => setPaletteOpen(true)} />
+
+        <div className="relative flex-1 overflow-hidden">
+          {/* Agents: roster of all configured agents with status; switch + chat.
+              Stays mounted so conversations survive view switches. */}
+          <div className={view === "agents" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <AgentChat initialAgentId={selectedAgent} />
+          </div>
+
+          {/* Claude Console: the general Claude chat (not pinned to an agent). */}
+          <div className={view === "chat" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <div className="mx-auto h-full max-w-3xl">
+              <ChatPanel pinnedAgent={null} />
+            </div>
+          </div>
+
+          {/* Goals & Journal stay mounted so unsaved input survives nav switches. */}
+          <div className={view === "goals" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <GoalsPanel />
+          </div>
+          <div className={view === "journal" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <JournalPanel />
+          </div>
+          <div className={view === "guide" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <GuidePanel />
+          </div>
+          <div className={view === "hermes" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <HermesPanel />
+          </div>
+          {/* Notebook, Pareto Router, and Kanban stay mounted so their
+              in-flight state (chat, routing, board) survives nav switches.
+              Notebook is notebooklm-mcp-backed and synced to the Obsidian vault. */}
+          <div className={view === "notebook" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <NotebookPanel />
+          </div>
+          <div className={view === "router" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ParetoRouterPanel />
+          </div>
+          <div className={view === "kanban" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <KanbanPanel />
+          </div>
+
+          {/* X (Twitter) Search — recent-search against the X API v2.
+              Stays mounted so the current query and results survive nav switches. */}
+          <div className={view === "twitter" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <TwitterPanel />
+          </div>
+
+          {/* Secrets Vault — keys from the Tech-Dev 1Password vault, each
+              health-checked against its provider. Mounted only while active so
+              secrets are read (and providers probed) only on demand. */}
+          {view === "secrets" && (
+            <div className="h-full p-4 lg:p-6">
+              <SecretsPanel />
+            </div>
+          )}
+
+          {/* OMI — recent wearable memories from the synced Obsidian export.
+              Mounted on demand so the export is read only when opened. */}
+          {view === "omi" && (
+            <div className="h-full p-4 lg:p-6">
+              <OmiPanel />
+            </div>
+          )}
+
+          {view === "neurosync" && (
+            <div className="h-full p-4 lg:p-6">
+              <NeuralPanel fullPage />
+            </div>
+          )}
+
+          {/* Paperclip — AI company OS / agent orchestration panel.
+              Mounted on demand so the status probe runs only when opened. */}
+          {view === "paperclip" && (
+            <div className="h-full p-4 lg:p-6">
+              <PaperclipPanel />
+            </div>
+          )}
+
+          {/* Obsidian launcher — opens native Obsidian app on Mac */}
+          {view === "obsidian" && (
+            <div className="panel flex h-full flex-col items-center justify-center gap-6">
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "#7c3aed22" }}>
+                  <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+                    <path d="M50 5L85 25V75L50 95L15 75V25L50 5Z" stroke="#7c3aed" strokeWidth="4" fill="#7c3aed11"/>
+                    <path d="M50 5L35 35L15 25" stroke="#7c3aed" strokeWidth="3"/>
+                    <path d="M50 5L65 35L85 25" stroke="#a78bfa" strokeWidth="3"/>
+                    <path d="M35 35L50 95" stroke="#7c3aed" strokeWidth="3"/>
+                    <path d="M65 35L50 95" stroke="#a78bfa" strokeWidth="3"/>
+                    <path d="M35 35L65 35" stroke="#c4b5fd" strokeWidth="3"/>
+                  </svg>
+                </div>
+                <h2 className="font-display text-2xl font-semibold text-white">Your Second Brain</h2>
+                <p className="max-w-sm text-sm text-[var(--color-ink-dim)]">
+                  Graph view, backlinks, canvas, and search live in Obsidian — where they belong.
+                </p>
+              </div>
+              <a
+                href="obsidian://open"
+                className="flex items-center gap-3 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-8 py-4 text-white transition hover:bg-purple-500/20 hover:border-purple-500/50"
+              >
+                <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
+                  <path d="M50 5L85 25V75L50 95L15 75V25L50 5Z" stroke="#a78bfa" strokeWidth="5" fill="#7c3aed22"/>
+                  <path d="M50 5L35 35L15 25" stroke="#7c3aed" strokeWidth="4"/>
+                  <path d="M50 5L65 35L85 25" stroke="#a78bfa" strokeWidth="4"/>
+                  <path d="M35 35L50 95" stroke="#7c3aed" strokeWidth="4"/>
+                  <path d="M65 35L50 95" stroke="#a78bfa" strokeWidth="4"/>
+                </svg>
+                <span className="font-semibold">Open in Obsidian</span>
+              </a>
+              <p className="font-mono text-[11px] text-[var(--color-ink-faint)]">
+                Vault: ~/Documents/Omi
+              </p>
+            </div>
+          )}
+
+          {/* Workflows, Memory, and Logs — real panels, each auto-saving to the
+              Obsidian vault. Mounted on demand so their data is fetched only when
+              opened. */}
+          {view === "workflows" && (
+            <div className="h-full p-4 lg:p-6">
+              <WorkflowsPanel />
+            </div>
+          )}
+          {view === "memory" && (
+            <div className="h-full p-4 lg:p-6">
+              <MemoryPalacePanel />
+            </div>
+          )}
+          {view === "logs" && (
+            <div className="h-full p-4 lg:p-6">
+              <LogsPanel />
+            </div>
+          )}
+
+          {/* Telemetry remains a placeholder until it's wired to a metrics store. */}
+          <div className={view === "telemetry" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <ComingSoon
+              title="Telemetry"
+              description="Live metrics, latency, and token usage across the fleet — streaming dashboards land here soon."
+              icon={Radio}
+            />
+          </div>
+          <div className={view === "settings" ? "h-full p-4 lg:p-6" : "hidden"}>
+            <SettingsPanel />
+          </div>
+
+          {/* ── New OPS + LIFE panels ────────────────────────── */}
+          {view === "cost" && (
+            <div className="h-full p-4 lg:p-6">
+              <CostMonitorPanel />
+            </div>
+          )}
+          {view === "security" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">📹</span>
+                  <h2 className="font-display text-lg font-semibold text-white">Security Cameras</h2>
+                </div>
+                <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                  <p className="text-[var(--color-ink-dim)] text-sm max-w-sm">Eufy HomeBase integration. Camera feeds load here once eufy_bridge.py is running.</p>
+                  <code className="font-mono text-xs text-[var(--color-ink-faint)] rounded bg-white/5 px-3 py-1">python3 /opt/data/scripts/eufy_bridge.py</code>
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "photos" && (
+            <div className="h-full p-4 lg:p-6">
+              <ComingSoon title="Photos" description="Family photo albums and property images from iCloud." icon={Radio} />
+            </div>
+          )}
+          {view === "properties" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🏘️</span>
+                  <h2 className="font-display text-lg font-semibold text-white">Properties</h2>
+                </div>
+                <div className="flex-1 p-4">
+                  <iframe src="https://medellinlodging.com" className="w-full h-full rounded-xl border border-white/5 min-h-[400px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "maintenance" && (
+            <div className="h-full p-4 lg:p-6">
+              <ComingSoon title="Maintenance" description="Property maintenance tickets and vendor contacts." icon={Radio} />
+            </div>
+          )}
+          {view === "medellin" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col" style={{borderColor:"rgba(245,158,11,0.2)"}}>
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🏖️</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Medellin Lodging</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">medellinlodging.com · site monitor</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-4 p-5 flex-1">
+                  <div className="grid grid-cols-2 gap-3">
+                    <a href="https://medellinlodging.com" target="_blank" rel="noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 hover:bg-amber-500/10 transition">
+                      <span className="text-sm font-medium text-white">Website</span>
+                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] text-amber-400">live</span>
+                    </a>
+                    <a href="https://www.airbnb.com" target="_blank" rel="noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 hover:bg-amber-500/10 transition">
+                      <span className="text-sm font-medium text-white">Airbnb</span>
+                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] text-amber-400">linked</span>
+                    </a>
+                  </div>
+                  <iframe src="https://medellinlodging.com" className="w-full flex-1 rounded-xl border border-white/5 min-h-[350px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "chickens" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col" style={{borderColor:"rgba(245,158,11,0.2)"}}>
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🐓</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Raising Chickens</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">raising-chickens.org · site monitor</p>
+                  </div>
+                </div>
+                <div className="flex-1 p-5">
+                  <iframe src="https://raising-chickens.org" className="w-full h-full rounded-xl border border-white/5 min-h-[400px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "mindinsurance" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col" style={{borderColor:"rgba(139,92,246,0.2)"}}>
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🧠</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Mind Insurance</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">app.wynneops.com · live dashboard</p>
+                  </div>
+                </div>
+                <div className="flex-1 p-5">
+                  <iframe src="https://app.wynneops.com/dashboard" className="w-full h-full rounded-xl border border-purple-500/20 min-h-[450px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* ── LIFE new panels ─────────────────────────────── */}
+          {view === "entertainment" && (
+            <div className="h-full p-4 lg:p-6"><EntertainmentPanel /></div>
+          )}
+          {view === "music" && (
+            <div className="h-full p-4 lg:p-6"><MusicPanel /></div>
+          )}
+          {view === "travel" && (
+            <div className="h-full p-4 lg:p-6"><TravelPanel /></div>
+          )}
+          {view === "family" && (
+            <div className="h-full p-4 lg:p-6"><FamilyPanel /></div>
+          )}
+          {view === "translator" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col gap-4 p-6">
+                <h2 className="font-display text-lg font-semibold text-white">🌐 Translator</h2>
+                <p className="text-sm text-[var(--color-ink-dim)]">Ask Hermes to translate anything — Spanish, Colombian slang, legal contracts. Use the Hermes Chat panel for live translation.</p>
+              </div>
+            </div>
+          )}
+          {view === "debate" && (
+            <div className="h-full p-4 lg:p-6"><ComingSoon title="Debate Coach" description="AI-powered debate prep — argument analysis, counter-argument generator, rhetoric scoring." icon={Radio} /></div>
+          )}
+          {view === "speech" && (
+            <div className="h-full p-4 lg:p-6"><ComingSoon title="Speech Writer" description="Draft speeches, toasts, and presentations. Hermes knows your voice." icon={Radio} /></div>
+          )}
+          {view === "gratitude" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col gap-4 p-6">
+                <h2 className="font-display text-lg font-semibold text-white">🙏 Gratitude Journal</h2>
+                <JournalPanel />
+              </div>
+            </div>
+          )}
+          {view === "habits" && (
+            <div className="h-full p-4 lg:p-6"><ComingSoon title="Habits" description="Daily habit tracker with streaks, reminders, and Hermes accountability check-ins." icon={Radio} /></div>
+          )}
+          {view === "hurricane" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🌀</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Hurricane Monitor</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">NHC · National Hurricane Center live feed</p>
+                  </div>
+                </div>
+                <div className="flex-1 p-4">
+                  <iframe src="https://www.nhc.noaa.gov/" className="w-full h-full rounded-xl border border-white/5 min-h-[400px]" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── BUSINESS clickable card panels ───────────────── */}
+          {view === "biz-intelligence" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "biz-intelligence", label: "Business Intelligence", icon: "📊", script: "life_dashboard_expanded.py", description: "Revenue metrics, KPIs, and market signals across all ventures" }} />
+            </div>
+          )}
+          {view === "neighborhood" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "neighborhood", label: "Neighborhood Monitor", icon: "🏘️", script: "", description: "Local news, crime alerts, and property trends" }} />
+            </div>
+          )}
+          {view === "legal" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "legal", label: "Legal Documents", icon: "⚖️", script: "", description: "Lease templates, contracts, and filings" }} />
+            </div>
+          )}
+          {view === "meetings" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "meetings", label: "Meeting Assistant", icon: "🤝", script: "", description: "Agenda builder and action-item extractor" }} />
+            </div>
+          )}
+          {view === "negotiator" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "negotiator", label: "Price Negotiator", icon: "💵", script: "", description: "Research-backed talking points for any deal" }} />
+            </div>
+          )}
+          {view === "content" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "content", label: "Content Machine", icon: "🏭", script: "podcast_generator.py", description: "Blog posts, SEO articles, and social copy" }} />
+            </div>
+          )}
+          {view === "social" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "social", label: "Social Media", icon: "📱", script: "reputation_manager.py", description: "Schedule posts for Instagram, TikTok, and X" }} />
+            </div>
+          )}
+          {view === "property-tracker" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "property-tracker", label: "Property Tracker", icon: "🗺️", script: "", description: "Zillow comps and Redfin alerts for your portfolio" }} />
+            </div>
+          )}
+          {view === "contractor" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "contractor", label: "Contractor Monitor", icon: "🔨", script: "", description: "Job status, invoices, and vendor scorecards" }} />
+            </div>
+          )}
+          {view === "competition" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "competition", label: "Competition Watcher", icon: "👁️", script: "", description: "Track competitor prices and content across niches" }} />
+            </div>
+          )}
+          {view === "affiliate" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "affiliate", label: "Affiliate Manager", icon: "🔗", script: "", description: "Commission dashboards and link performance" }} />
+            </div>
+          )}
+          {view === "reputation" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "reputation", label: "Reputation Manager", icon: "⭐", script: "reputation_manager.py", description: "Review monitoring and response drafts" }} />
+            </div>
+          )}
+          {view === "tax" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "tax", label: "Tax Assistant", icon: "🧾", script: "tax_assistant.py", description: "Quarterly taxes, deductions, and IRS deadlines" }} />
+            </div>
+          )}
+          {view === "airbnb" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "airbnb", label: "Airbnb Manager", icon: "🏡", script: "airbnb_manager.py", description: "Guest messages, pricing, and listing performance" }} />
+            </div>
+          )}
+          {view === "emailwriter" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "emailwriter", label: "Email Writer", icon: "✉️", script: "", description: "Draft professional emails in your voice" }} />
+            </div>
+          )}
+
+          {/* ── HELP panels ───────────────────────────────────── */}
+          {view === "tutorial" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col gap-6 p-6 overflow-y-auto">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🎓</span>
+                  <div>
+                    <h2 className="font-display text-xl font-semibold text-white">Interactive Tutorial</h2>
+                    <p className="text-sm text-[var(--color-ink-dim)]">Click through each panel at your own pace</p>
+                  </div>
+                </div>
+                {["🤖 AGENTS — Chat with Hermes, monitor cost","🛠️ TOOLS — Kanban boards, notes, logs, memory","🌱 LIFE — Dashboard, goals, habits, journal","💼 BUSINESS — All your business tools in one place","❓ HELP — This tutorial, guides, and settings"].map((step, i) => (
+                  <div key={i} className="flex items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 font-bold text-emerald-400 text-sm">{i+1}</div>
+                    <p className="text-sm text-[var(--color-ink-dim)] pt-1">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {view === "quickref" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full overflow-y-auto">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">📌</span>
+                  <h2 className="font-display text-lg font-semibold text-white">Quick Reference — Top 20 Commands</h2>
+                </div>
+                <div className="grid gap-3 p-5 sm:grid-cols-2">
+                  {["Check my schedule today","What's the weather in Medellin?","Summarize my last 3 meetings","Draft a follow-up to [contractor]","How much have I spent on tokens today?","Show me Raising Chickens analytics","Translate this to Spanish","What are my open Kanban tasks?","Run the morning briefing","Check Airbnb bookings","What are my goals this month?","Show Mind Insurance revenue","Draft an email to [person]","How are my sites performing?","What's new since yesterday?","Show me the cost breakdown","Summarize my journal this week","What's the hurricane forecast?","Create a habit reminder","Generate a weekly report"].map((cmd, i) => (
+                    <div key={i} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/5 px-3 py-2">
+                      <span className="font-mono text-[10px] text-amber-400 shrink-0">{String(i+1).padStart(2,"0")}</span>
+                      <span className="text-xs text-[var(--color-ink-dim)]">&ldquo;{cmd}&rdquo;</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "whatsnew" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full overflow-y-auto">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🆕</span>
+                  <h2 className="font-display text-lg font-semibold text-white">What's New</h2>
+                </div>
+                <LogsPanel />
+              </div>
+            </div>
+          )}
+
+          {view === "sweeney" && (
+            <div className="h-full p-4 lg:p-6">
+              <ComingSoon title="Sweeney & Clancy" description="Legal counsel contacts, case tracker, and document vault." icon={Radio} />
+            </div>
+          )}
+
+          {/* WORKSPACE - ModelRouterRail + dual chat panels */}
+          <div className={view === "dashboard" ? "h-full" : "hidden"}>
+            <div style={{ display:"flex", height:"100%", overflow:"hidden" }}>
+              <ModelRouterRail />
+              <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, padding:"5px 12px", borderBottom:"1px solid #1f2937", flexShrink:0, background:"#080c14" }}>
+                  <span style={{ fontSize:10, color:"#374151", fontFamily:"monospace" }}>RUFLO</span>
+                  <RufloStatusStrip />
+                </div>
+                <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
+                  <div style={{ flex:1, overflow:"hidden", borderRight:"1px solid #1f2937" }}>
+                    <HermesPanel />
+                  </div>
+                  <div style={{ flex:1, overflow:"hidden" }}>
+                    <ChatPanel pinnedAgent={selectedAgent} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        onNavigate={setActiveNav}
+        onPickAgent={openAgent}
+      />
+    </main>
+  );
+}
+
+function PrimaryAction({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
+  return (
+    <button onClick={onClick} className="group relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-[var(--color-cyan)]/25 to-[var(--color-violet)]/25 px-4 py-2 text-sm font-medium text-white transition hover:from-[var(--color-cyan)]/40 hover:to-[var(--color-violet)]/40">
+      <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+      <span className="relative flex items-center gap-2">
+        {icon}
+        {label}
+      </span>
+    </button>
+  );
+}
+
+function SecondaryAction({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick?: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-[var(--color-ink-dim)] transition hover:bg-white/[0.07] hover:text-white">
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function Ticker() {
+  const items = [
+    "ORCHESTRATOR · routing 4 tasks",
+    "ARCHITECT · drafting ADR-0042",
+    "SENTINEL · scanning supply chain (clean)",
+    "MEMORIA · 312MB → 184MB compacted",
+    "OPS · staging deploy queued",
+    "RESEARCHER · indexed 1,284 docs",
+    "CODER · 14 files committed, build passed",
+    "REVIEWER · approved PR #318",
+    "TESTER · 92.4% coverage",
+    "SCOUT · 7 new files detected",
+  ];
+  const doubled = [...items, ...items];
+
+  return (
+    <div className="panel relative overflow-hidden">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-[#04060d] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-[#04060d] to-transparent" />
+
+      <div className="flex items-center gap-3 px-5 py-3">
+        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-[var(--color-amber)]">
+          FLEET FEED
+        </span>
+        <span className="h-1 w-1 rounded-full bg-[var(--color-amber)]" />
+        <div className="relative flex-1 overflow-hidden">
+          <div className="marquee">
+            {doubled.map((t, i) => (
+              <span
+                key={i}
+                className="flex items-center gap-3 font-mono text-[11px] tracking-wide text-[var(--color-ink-dim)]"
+              >
+                <span className="h-1 w-1 rounded-full bg-[var(--color-cyan)]" />
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

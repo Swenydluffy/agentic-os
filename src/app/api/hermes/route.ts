@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // An agent run can take a while; allow a generous server-side budget.
-export const maxDuration = 180;
+export const maxDuration = 300;
 
 /** LIVE/OFFLINE status via Hermes' /api/status. */
 export async function GET() {

@@ -1,27 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Bot, Coins, Gauge, Sparkles, Zap, Server, Radio } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
-import { Sidebar } from "@/components/Sidebar";
-import { StatTile } from "@/components/StatTile";
-import { AgentGrid } from "@/components/AgentGrid";
+import Sidebar from "@/components/Sidebar";
 import { ChatPanel } from "@/components/ChatPanel";
 import { AgentChat } from "@/components/AgentChat";
 import { GoalsPanel } from "@/components/GoalsPanel";
 import { JournalPanel } from "@/components/JournalPanel";
 import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
+import { HermesTelegramPanel } from "@/components/HermesTelegramPanel";
+import { HermesMCPanel } from "@/components/HermesMCPanel";
+import { ResizableDivider } from "@/components/ResizableDivider";
 import { ComingSoon } from "@/components/ComingSoon";
-import { ModelsPanel } from "@/components/ModelsPanel";
+import { ModelRouterRail } from "@/components/ModelRouterRail";
+import { RufloExpandableStrip } from "@/components/RufloExpandableStrip";
+import { MemoryHealthBar } from "@/components/MemoryHealthBar";
+import { MetricBar } from "@/components/MetricBar";
+import { WorkToolsStrip } from "@/components/MetricBar";
 import { NotebookPanel } from "@/components/NotebookPanel";
 import { ParetoRouterPanel } from "@/components/ParetoRouterPanel";
 import { KanbanPanel } from "@/components/KanbanPanel";
-import { RufloPanel } from "@/components/RufloPanel";
 import { TwitterPanel } from "@/components/TwitterPanel";
 import { SecretsPanel } from "@/components/SecretsPanel";
 import { OmiPanel } from "@/components/OmiPanel";
+import { TravelPanel } from "@/components/TravelPanel";
+import { FamilyPanel } from "@/components/FamilyPanel";
+import { EntertainmentPanel } from "@/components/EntertainmentPanel";
+import { MusicPanel } from "@/components/MusicPanel";
 
 import { PaperclipPanel } from "@/components/PaperclipPanel";
 import { MemoryPanel } from "@/components/MemoryPanel";
@@ -30,6 +38,10 @@ import { WorkflowsPanel } from "@/components/WorkflowsPanel";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { ActivityLog } from "@/components/ActivityLog";
 import { NeuralPanel } from "@/components/NeuralPanel";
+import { CostMonitorPanel } from "@/components/CostMonitorPanel";
+import { MemoryPalacePanel } from "@/components/MemoryPalacePanel";
+import { BusinessPanel } from "@/components/BusinessPanel";
+import { CalendarPanel } from "@/components/CalendarPanel";
 import { CommandPalette } from "@/components/CommandPalette";
 
 function drift(seed: number, n = 24, base = 50, range = 30) {
@@ -74,53 +86,42 @@ export default function Page() {
   );
 
   type View =
-    | "dashboard"
-    | "agents"
-    | "chat"
-    | "hermes"
-    | "models"
-    | "notebook"
-    | "router"
-    | "kanban"
-    | "ruflo"
-    | "twitter"
-    | "secrets"
-    | "omi"
-    | "paperclip"
-    | "obsidian"
-    | "goals"
-    | "journal"
-    | "guide"
-    | "workflows"
-    | "telemetry"
-    | "memory"
-    | "logs"
-    | "settings";
+    | "dashboard" | "agents" | "chat" | "hermes" | "models" | "notebook"
+    | "router" | "kanban" | "ruflo" | "twitter" | "secrets" | "omi"
+    | "neurosync" | "paperclip" | "obsidian" | "goals" | "journal" | "guide"
+    | "workflows" | "telemetry" | "memory" | "logs" | "settings" | "cost"
+    | "security" | "photos" | "properties" | "maintenance" | "medellin"
+    | "chickens" | "mindinsurance" | "sweeney" | "entertainment" | "music"
+    | "travel" | "family"
+    | "translator" | "debate" | "speech" | "gratitude" | "habits"
+    | "hurricane" | "biz-intelligence" | "neighborhood" | "legal" | "meetings"
+    | "negotiator" | "content" | "social" | "property-tracker" | "contractor"
+    | "competition" | "affiliate" | "reputation" | "tax" | "airbnb"
+    | "emailwriter" | "tutorial" | "quickref" | "whatsnew";
 
   // Each nav id maps to a panel; anything unknown falls back to the dashboard.
   const PANELS: Record<string, View> = {
-    mission: "dashboard",
-    agents: "agents",
-    chat: "chat",
-    hermes: "hermes",
-    models: "models",
-    notebook: "notebook",
-    router: "router",
-    kanban: "kanban",
-    ruflo: "ruflo",
-    twitter: "twitter",
-    secrets: "secrets",
-    omi: "omi",
-    paperclip: "paperclip",
-    obsidian: "obsidian",
-    goals: "goals",
-    journal: "journal",
-    guide: "guide",
-    workflows: "workflows",
-    telemetry: "telemetry",
-    memory: "memory",
-    logs: "logs",
-    settings: "settings",
+    mission: "dashboard", dashboard: "dashboard",
+    hermes: "hermes", agents: "agents", chat: "chat", models: "dashboard",
+    notebook: "notebook", router: "router", kanban: "kanban", ruflo: "dashboard",
+    twitter: "twitter", secrets: "secrets", omi: "omi", neurosync: "neurosync",
+    paperclip: "paperclip", obsidian: "obsidian", goals: "goals",
+    journal: "journal", guide: "guide", workflows: "workflows",
+    telemetry: "telemetry", memory: "memory", logs: "logs",
+    settings: "settings", cost: "cost", security: "security",
+    photos: "photos", properties: "properties", maintenance: "maintenance",
+    medellin: "medellin", chickens: "chickens", mindinsurance: "mindinsurance",
+    sweeney: "sweeney", entertainment: "entertainment", music: "music",
+    travel: "travel", family: "family",
+    translator: "translator", debate: "debate", speech: "speech",
+    gratitude: "gratitude", habits: "habits", hurricane: "hurricane",
+    "biz-intelligence": "biz-intelligence", neighborhood: "neighborhood",
+    legal: "legal", meetings: "meetings", negotiator: "negotiator",
+    content: "content", social: "social", "property-tracker": "property-tracker",
+    contractor: "contractor", competition: "competition", affiliate: "affiliate",
+    reputation: "reputation", tax: "tax", airbnb: "airbnb",
+    emailwriter: "emailwriter", tutorial: "tutorial", quickref: "quickref",
+    whatsnew: "whatsnew",
   };
   const view: View = PANELS[activeNav] ?? "dashboard";
 
@@ -131,7 +132,7 @@ export default function Page() {
 
   return (
     <main className="relative z-10 flex h-screen w-screen overflow-hidden">
-      <Sidebar active={activeNav} onSelect={setActiveNav} />
+      <Sidebar activeView={activeNav} onViewChange={setActiveNav} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar onOpenPalette={() => setPaletteOpen(true)} />
@@ -163,10 +164,6 @@ export default function Page() {
           <div className={view === "hermes" ? "h-full p-4 lg:p-6" : "hidden"}>
             <HermesPanel />
           </div>
-          <div className={view === "models" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <ModelsPanel />
-          </div>
-
           {/* Notebook, Pareto Router, and Kanban stay mounted so their
               in-flight state (chat, routing, board) survives nav switches.
               Notebook is notebooklm-mcp-backed and synced to the Obsidian vault. */}
@@ -178,12 +175,6 @@ export default function Page() {
           </div>
           <div className={view === "kanban" ? "h-full p-4 lg:p-6" : "hidden"}>
             <KanbanPanel />
-          </div>
-
-          {/* Ruflo Swarm — live agent fleet on the local OpenClaw gateway.
-              Stays mounted so its 10s polling and any open composer survive nav switches. */}
-          <div className={view === "ruflo" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <RufloPanel />
           </div>
 
           {/* X (Twitter) Search — recent-search against the X API v2.
@@ -206,6 +197,12 @@ export default function Page() {
           {view === "omi" && (
             <div className="h-full p-4 lg:p-6">
               <OmiPanel />
+            </div>
+          )}
+
+          {view === "neurosync" && (
+            <div className="h-full p-4 lg:p-6">
+              <NeuralPanel fullPage />
             </div>
           )}
 
@@ -265,7 +262,7 @@ export default function Page() {
           )}
           {view === "memory" && (
             <div className="h-full p-4 lg:p-6">
-              <MemoryPanel />
+              <MemoryPalacePanel />
             </div>
           )}
           {view === "logs" && (
@@ -286,98 +283,301 @@ export default function Page() {
             <SettingsPanel />
           </div>
 
+          {/* ── New OPS + LIFE panels ────────────────────────── */}
+          {view === "cost" && (
+            <div className="h-full p-4 lg:p-6">
+              <CostMonitorPanel />
+            </div>
+          )}
+          {view === "security" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">📹</span>
+                  <h2 className="font-display text-lg font-semibold text-white">Security Cameras</h2>
+                </div>
+                <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                  <p className="text-[var(--color-ink-dim)] text-sm max-w-sm">Eufy HomeBase integration. Camera feeds load here once eufy_bridge.py is running.</p>
+                  <code className="font-mono text-xs text-[var(--color-ink-faint)] rounded bg-white/5 px-3 py-1">python3 /opt/data/scripts/eufy_bridge.py</code>
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "photos" && (
+            <div className="h-full p-4 lg:p-6">
+              <ComingSoon title="Photos" description="Family photo albums and property images from iCloud." icon={Radio} />
+            </div>
+          )}
+          {view === "properties" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🏘️</span>
+                  <h2 className="font-display text-lg font-semibold text-white">Properties</h2>
+                </div>
+                <div className="flex-1 p-4">
+                  <iframe src="https://medellinlodging.com" className="w-full h-full rounded-xl border border-white/5 min-h-[400px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "maintenance" && (
+            <div className="h-full p-4 lg:p-6">
+              <ComingSoon title="Maintenance" description="Property maintenance tickets and vendor contacts." icon={Radio} />
+            </div>
+          )}
+          {view === "medellin" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col" style={{borderColor:"rgba(245,158,11,0.2)"}}>
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🏖️</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Medellin Lodging</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">medellinlodging.com · site monitor</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-4 p-5 flex-1">
+                  <div className="grid grid-cols-2 gap-3">
+                    <a href="https://medellinlodging.com" target="_blank" rel="noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 hover:bg-amber-500/10 transition">
+                      <span className="text-sm font-medium text-white">Website</span>
+                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] text-amber-400">live</span>
+                    </a>
+                    <a href="https://www.airbnb.com" target="_blank" rel="noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 hover:bg-amber-500/10 transition">
+                      <span className="text-sm font-medium text-white">Airbnb</span>
+                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] text-amber-400">linked</span>
+                    </a>
+                  </div>
+                  <iframe src="https://medellinlodging.com" className="w-full flex-1 rounded-xl border border-white/5 min-h-[350px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "chickens" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col" style={{borderColor:"rgba(245,158,11,0.2)"}}>
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🐓</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Raising Chickens</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">raising-chickens.org · site monitor</p>
+                  </div>
+                </div>
+                <div className="flex-1 p-5">
+                  <iframe src="https://raising-chickens.org" className="w-full h-full rounded-xl border border-white/5 min-h-[400px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "mindinsurance" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col" style={{borderColor:"rgba(139,92,246,0.2)"}}>
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🧠</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Mind Insurance</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">app.wynneops.com · live dashboard</p>
+                  </div>
+                </div>
+                <div className="flex-1 p-5">
+                  <iframe src="https://app.wynneops.com/dashboard" className="w-full h-full rounded-xl border border-purple-500/20 min-h-[450px]" />
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* ── LIFE new panels ─────────────────────────────── */}
+          {view === "entertainment" && (
+            <div className="h-full p-4 lg:p-6"><EntertainmentPanel /></div>
+          )}
+          {view === "music" && (
+            <div className="h-full p-4 lg:p-6"><MusicPanel /></div>
+          )}
+          {view === "travel" && (
+            <div className="h-full p-4 lg:p-6"><TravelPanel /></div>
+          )}
+          {view === "family" && (
+            <div className="h-full p-4 lg:p-6"><FamilyPanel /></div>
+          )}
+          {view === "translator" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col gap-4 p-6">
+                <h2 className="font-display text-lg font-semibold text-white">🌐 Translator</h2>
+                <p className="text-sm text-[var(--color-ink-dim)]">Ask Hermes to translate anything — Spanish, Colombian slang, legal contracts. Use the Hermes Chat panel for live translation.</p>
+              </div>
+            </div>
+          )}
+          {view === "debate" && (
+            <div className="h-full p-4 lg:p-6"><ComingSoon title="Debate Coach" description="AI-powered debate prep — argument analysis, counter-argument generator, rhetoric scoring." icon={Radio} /></div>
+          )}
+          {view === "speech" && (
+            <div className="h-full p-4 lg:p-6"><ComingSoon title="Speech Writer" description="Draft speeches, toasts, and presentations. Hermes knows your voice." icon={Radio} /></div>
+          )}
+          {view === "gratitude" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col gap-4 p-6">
+                <h2 className="font-display text-lg font-semibold text-white">🙏 Gratitude Journal</h2>
+                <JournalPanel />
+              </div>
+            </div>
+          )}
+          {view === "habits" && (
+            <div className="h-full p-4 lg:p-6"><ComingSoon title="Habits" description="Daily habit tracker with streaks, reminders, and Hermes accountability check-ins." icon={Radio} /></div>
+          )}
+          {view === "hurricane" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🌀</span>
+                  <div>
+                    <h2 className="font-display text-lg font-semibold text-white">Hurricane Monitor</h2>
+                    <p className="text-xs text-[var(--color-ink-faint)]">NHC · National Hurricane Center live feed</p>
+                  </div>
+                </div>
+                <div className="flex-1 p-4">
+                  <iframe src="https://www.nhc.noaa.gov/" className="w-full h-full rounded-xl border border-white/5 min-h-[400px]" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── BUSINESS clickable card panels ───────────────── */}
+          {view === "biz-intelligence" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "biz-intelligence", label: "Business Intelligence", icon: "📊", script: "life_dashboard_expanded.py", description: "Revenue metrics, KPIs, and market signals across all ventures" }} />
+            </div>
+          )}
+          {view === "neighborhood" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "neighborhood", label: "Neighborhood Monitor", icon: "🏘️", script: "", description: "Local news, crime alerts, and property trends" }} />
+            </div>
+          )}
+          {view === "legal" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "legal", label: "Legal Documents", icon: "⚖️", script: "", description: "Lease templates, contracts, and filings" }} />
+            </div>
+          )}
+          {view === "meetings" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "meetings", label: "Meeting Assistant", icon: "🤝", script: "", description: "Agenda builder and action-item extractor" }} />
+            </div>
+          )}
+          {view === "negotiator" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "negotiator", label: "Price Negotiator", icon: "💵", script: "", description: "Research-backed talking points for any deal" }} />
+            </div>
+          )}
+          {view === "content" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "content", label: "Content Machine", icon: "🏭", script: "podcast_generator.py", description: "Blog posts, SEO articles, and social copy" }} />
+            </div>
+          )}
+          {view === "social" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "social", label: "Social Media", icon: "📱", script: "reputation_manager.py", description: "Schedule posts for Instagram, TikTok, and X" }} />
+            </div>
+          )}
+          {view === "property-tracker" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "property-tracker", label: "Property Tracker", icon: "🗺️", script: "", description: "Zillow comps and Redfin alerts for your portfolio" }} />
+            </div>
+          )}
+          {view === "contractor" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "contractor", label: "Contractor Monitor", icon: "🔨", script: "", description: "Job status, invoices, and vendor scorecards" }} />
+            </div>
+          )}
+          {view === "competition" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "competition", label: "Competition Watcher", icon: "👁️", script: "", description: "Track competitor prices and content across niches" }} />
+            </div>
+          )}
+          {view === "affiliate" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "affiliate", label: "Affiliate Manager", icon: "🔗", script: "", description: "Commission dashboards and link performance" }} />
+            </div>
+          )}
+          {view === "reputation" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "reputation", label: "Reputation Manager", icon: "⭐", script: "reputation_manager.py", description: "Review monitoring and response drafts" }} />
+            </div>
+          )}
+          {view === "tax" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "tax", label: "Tax Assistant", icon: "🧾", script: "tax_assistant.py", description: "Quarterly taxes, deductions, and IRS deadlines" }} />
+            </div>
+          )}
+          {view === "airbnb" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "airbnb", label: "Airbnb Manager", icon: "🏡", script: "airbnb_manager.py", description: "Guest messages, pricing, and listing performance" }} />
+            </div>
+          )}
+          {view === "emailwriter" && (
+            <div className="h-full p-4 lg:p-6">
+              <BusinessPanel tool={{ id: "emailwriter", label: "Email Writer", icon: "✉️", script: "", description: "Draft professional emails in your voice" }} />
+            </div>
+          )}
+
+          {/* ── HELP panels ───────────────────────────────────── */}
+          {view === "tutorial" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full flex flex-col gap-6 p-6 overflow-y-auto">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">🎓</span>
+                  <div>
+                    <h2 className="font-display text-xl font-semibold text-white">Interactive Tutorial</h2>
+                    <p className="text-sm text-[var(--color-ink-dim)]">Click through each panel at your own pace</p>
+                  </div>
+                </div>
+                {["🤖 AGENTS — Chat with Hermes, monitor cost","🛠️ TOOLS — Kanban boards, notes, logs, memory","🌱 LIFE — Dashboard, goals, habits, journal","💼 BUSINESS — All your business tools in one place","❓ HELP — This tutorial, guides, and settings"].map((step, i) => (
+                  <div key={i} className="flex items-start gap-4 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 font-bold text-emerald-400 text-sm">{i+1}</div>
+                    <p className="text-sm text-[var(--color-ink-dim)] pt-1">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {view === "quickref" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full overflow-y-auto">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">📌</span>
+                  <h2 className="font-display text-lg font-semibold text-white">Quick Reference — Top 20 Commands</h2>
+                </div>
+                <div className="grid gap-3 p-5 sm:grid-cols-2">
+                  {["Check my schedule today","What's the weather in Medellin?","Summarize my last 3 meetings","Draft a follow-up to [contractor]","How much have I spent on tokens today?","Show me Raising Chickens analytics","Translate this to Spanish","What are my open Kanban tasks?","Run the morning briefing","Check Airbnb bookings","What are my goals this month?","Show Mind Insurance revenue","Draft an email to [person]","How are my sites performing?","What's new since yesterday?","Show me the cost breakdown","Summarize my journal this week","What's the hurricane forecast?","Create a habit reminder","Generate a weekly report"].map((cmd, i) => (
+                    <div key={i} className="flex items-center gap-3 rounded-lg bg-white/[0.02] border border-white/5 px-3 py-2">
+                      <span className="font-mono text-[10px] text-amber-400 shrink-0">{String(i+1).padStart(2,"0")}</span>
+                      <span className="text-xs text-[var(--color-ink-dim)]">&ldquo;{cmd}&rdquo;</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {view === "whatsnew" && (
+            <div className="h-full p-4 lg:p-6">
+              <div className="panel h-full overflow-y-auto">
+                <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
+                  <span className="text-2xl">🆕</span>
+                  <h2 className="font-display text-lg font-semibold text-white">What's New</h2>
+                </div>
+                <LogsPanel />
+              </div>
+            </div>
+          )}
+
+          {view === "sweeney" && (
+            <div className="h-full p-4 lg:p-6">
+              <ComingSoon title="Sweeney & Clancy" description="Legal counsel contacts, case tracker, and document vault." icon={Radio} />
+            </div>
+          )}
+
+          {/* WORKSPACE - 3-panel: TG | MC | Claude — draggable dividers */}
           <div className={view === "dashboard" ? "h-full" : "hidden"}>
-          <div className="grid h-full grid-cols-12 gap-4 overflow-y-auto p-4 lg:p-6">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: [0.2, 0.7, 0.2, 1] }}
-              className="col-span-12 flex items-center justify-between"
-            >
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--color-ink-faint)]">
-                  Bridge · live
-                </p>
-                <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">
-                  <span className="text-white">Good evening, </span>
-                  <span className="hue">commander</span>
-                  <span className="text-white">.</span>
-                </h1>
-                <p className="mt-1 text-sm text-[var(--color-ink-dim)]">
-                  Fleet is humming. Three open threads. Want to push the new build before midnight?
-                </p>
-              </div>
-              <div className="hidden items-center gap-2 md:flex">
-                <PrimaryAction icon={<Zap size={14} />} label="Launch Workflow" onClick={() => setActiveNav("workflows")} />
-                <SecondaryAction icon={<Sparkles size={14} />} label="Ask Claude" onClick={() => setActiveNav("chat")} />
-              </div>
-            </motion.div>
-
-            <div className="col-span-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <StatTile
-                label="Agents Online"
-                value={9}
-                suffix="/ 10"
-                delta={2.4}
-                spark={sparks.agents}
-                accent="lime"
-                icon={<Bot size={12} />}
-              />
-              <StatTile
-                label="Tasks · 24h"
-                value={147}
-                delta={18.6}
-                spark={sparks.tasks}
-                accent="cyan"
-                icon={<Gauge size={12} />}
-              />
-              <StatTile
-                label="Tokens Burned"
-                value={482000}
-                delta={-4.2}
-                spark={sparks.tokens}
-                accent="violet"
-                icon={<Coins size={12} />}
-              />
-              <StatTile
-                label="Avg Latency"
-                value={412}
-                suffix="ms"
-                delta={-9.1}
-                spark={sparks.latency}
-                accent="magenta"
-                icon={<Server size={12} />}
-              />
-            </div>
-
-            <div className="col-span-12 lg:col-span-7 xl:col-span-8">
-              <div className="h-[560px]">
-                <AgentGrid selectedId={selectedAgent} onSelect={openAgent} />
-              </div>
-            </div>
-
-            <div className="col-span-12 lg:col-span-5 xl:col-span-4">
-              <div className="h-[560px]">
-                <ChatPanel pinnedAgent={selectedAgent} />
-              </div>
-            </div>
-
-            <div className="col-span-12 lg:col-span-5 xl:col-span-4">
-              <div className="h-[360px]">
-                <NeuralPanel />
-              </div>
-            </div>
-
-            <div className="col-span-12 lg:col-span-7 xl:col-span-8">
-              <div className="h-[360px]">
-                <ActivityLog />
-              </div>
-            </div>
-
-            <div className="col-span-12">
-              <Ticker />
-            </div>
-          </div>
+            <WorkspaceLayout selectedAgent={selectedAgent} onNavigate={setActiveNav} />
           </div>
         </div>
       </div>
@@ -389,6 +589,76 @@ export default function Page() {
         onPickAgent={openAgent}
       />
     </main>
+  );
+}
+
+// ─── WorkspaceLayout — three independent panels + draggable dividers ──────────
+// Isolated in its own component so state never leaks across panels.
+function WorkspaceLayout({ selectedAgent, onNavigate }: { selectedAgent?: string | null; onNavigate: (id: string) => void }) {
+  // Panel widths as flex values (pixels). Defaults tuned for a 27" screen.
+  const [railW,  setRailW]  = React.useState(320);
+  const [tgW,    setTgW]    = React.useState(0);   // 0 = use flex:1
+  const [mcW,    setMcW]    = React.useState(0);
+  const [clW,    setClW]    = React.useState(0);
+
+  // Clamp helper
+  function clamp(v: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  return (
+    <div style={{ display:"flex", height:"100%", overflow:"hidden" }}>
+      {/* Model Router Rail */}
+      <div style={{ width: railW, minWidth: 220, maxWidth: 480, flexShrink:0, overflow:"hidden" }}>
+        <ModelRouterRail />
+      </div>
+
+      <ResizableDivider onDrag={d => setRailW(w => clamp(w + d, 220, 480))} />
+
+      {/* Right side: top bar + three chats */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
+        {/* Work tools strip */}
+        <WorkToolsStrip onNavigate={onNavigate} />
+        {/* MetricBar + Ruflo expandable strip */}
+        <MetricBar />
+        <RufloExpandableStrip />
+        <MemoryHealthBar />
+
+        {/* Three chat panels */}
+        <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
+
+          {/* Panel 1: Hermes — Telegram (main thread) */}
+          <div style={{ width: tgW || undefined, flex: tgW ? undefined : 1, minWidth: 280, overflow:"hidden" }}>
+            <HermesTelegramPanel />
+          </div>
+
+          <ResizableDivider onDrag={d => {
+            setTgW(w => {
+              const cur = w || 400;
+              return clamp(cur + d, 280, 900);
+            });
+          }} />
+
+          {/* Panel 2: Hermes — Mission Control (side thread) */}
+          <div style={{ width: mcW || undefined, flex: mcW ? undefined : 1, minWidth: 280, overflow:"hidden" }}>
+            <HermesMCPanel />
+          </div>
+
+          <ResizableDivider onDrag={d => {
+            setMcW(w => {
+              const cur = w || 400;
+              return clamp(cur + d, 280, 900);
+            });
+          }} />
+
+          {/* Panel 3: Claude Console */}
+          <div style={{ width: clW || undefined, flex: clW ? undefined : 1, minWidth: 280, overflow:"hidden" }}>
+            <ChatPanel pinnedAgent={selectedAgent} />
+          </div>
+
+        </div>
+      </div>
+    </div>
   );
 }
 

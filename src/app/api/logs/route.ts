@@ -1,6 +1,3 @@
-import { readdir, readFile, stat } from "node:fs/promises";
-import { join } from "node:path";
-import { homedir } from "node:os";
 import * as os from "node:os";
 
 export const runtime = "nodejs";
@@ -34,52 +31,49 @@ export interface SystemInfo {
   loadAvg: number[];
 }
 
-const CRON_DIR = join(homedir(), "cron", "output");
-const MAX_OUTPUT = 4000;
+const NOTES_URL   = process.env.NOTES_SERVER_URL ?? "https://notes.wynneops.com";
 
-/** Read each file in ~/cron/output/ as a cron job log; fall back to samples. */
+/** Fetch cron job logs from the notes server API. Falls back to samples on error. */
 async function readCronLogs(): Promise<CronLog[]> {
-  let entries: string[];
   try {
-    entries = (await readdir(CRON_DIR)).filter((f) => !f.startsWith("."));
+    const res = await fetch(`${NOTES_URL}/api/cron-logs?limit=50`, {
+      headers: { "x-notes-token": process.env.NOTES_TOKEN ?? "notes-wynneops-2026" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return SAMPLE_CRON;
+
+    const data = await res.json() as {
+      ok: boolean;
+      jobs?: Array<{
+        job_id: string;
+        name: string;
+        lastRun: string;
+        status: "ok" | "error" | "unknown";
+        outputFile: string;
+      }>;
+    };
+    if (!data.ok || !Array.isArray(data.jobs) || data.jobs.length === 0) {
+      return SAMPLE_CRON;
+    }
+
+    return data.jobs.map((j) => ({
+      name:    j.name || j.job_id,
+      lastRun: j.lastRun ?? null,
+      status:  j.status ?? "unknown",
+      output:  "",  // populated on demand via ?file= — not fetched in list view
+    }));
   } catch {
     return SAMPLE_CRON;
   }
-  if (entries.length === 0) return SAMPLE_CRON;
-
-  const logs: CronLog[] = [];
-  for (const name of entries.slice(0, 50)) {
-    const abs = join(CRON_DIR, name);
-    try {
-      const s = await stat(abs);
-      if (!s.isFile()) continue;
-      const text = await readFile(abs, "utf8");
-      const output = text.length > MAX_OUTPUT ? text.slice(-MAX_OUTPUT) : text;
-      const status: CronLog["status"] = /error|fail|traceback|exception/i.test(output)
-        ? "error"
-        : "ok";
-      logs.push({ name, lastRun: s.mtime.toISOString(), status, output: output.trim() });
-    } catch {
-      // unreadable — skip
-    }
-  }
-  logs.sort((a, b) => (b.lastRun ?? "").localeCompare(a.lastRun ?? ""));
-  return logs.length > 0 ? logs : SAMPLE_CRON;
 }
 
 const SAMPLE_CRON: CronLog[] = [
   {
-    name: "instagram-post.log",
+    name: "cron-logs (offline)",
     lastRun: null,
     status: "unknown",
-    output:
-      "No cron output found at ~/cron/output/.\nThis is sample data — wire up your cron jobs to write logs here and they'll appear automatically.",
-  },
-  {
-    name: "obsidian-sync.log",
-    lastRun: null,
-    status: "unknown",
-    output: "[sample] git push vault → up to date.",
+    output: "Notes server unreachable — cron logs unavailable. Check that notes.wynneops.com is running.",
   },
 ];
 
@@ -100,14 +94,7 @@ const SAMPLE_SESSIONS: SessionLog[] = [
     status: "completed",
     summary: "Built Notebook panel + asset Range endpoint · build passed.",
   },
-  {
-    id: "sess-3",
-    agent: "Sentinel",
-    started: "2026-05-31T20:09:12Z",
-    durationMs: 41800,
-    status: "failed",
-    summary: "Anomalous token usage flagged on /agent/scout.",
-  },
+
 ];
 
 function systemInfo(): SystemInfo {

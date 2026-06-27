@@ -1,0 +1,193 @@
+"use client";
+
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                               */
+/* ------------------------------------------------------------------ */
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: string; // emoji
+  href: string;
+}
+
+interface NavSection {
+  id: string;
+  label: string;
+  icon: string;
+  items: NavItem[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Nav data                                                            */
+/* ------------------------------------------------------------------ */
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    id: "agents",
+    label: "AGENTS",
+    icon: "🤖",
+    items: [
+      { id: "hermes",  label: "Hermes",      icon: "⚡", href: "/hermes"  },
+      { id: "ruflo",   label: "Ruflo Swarm", icon: "🕸️", href: "/ruflo"   },
+      { id: "models",  label: "Models",      icon: "🧠", href: "/models"  },
+    ],
+  },
+  {
+    id: "tools",
+    label: "TOOLS",
+    icon: "🛠️",
+    items: [
+      { id: "kanban",    label: "Kanban",    icon: "📋", href: "/kanban"    },
+      { id: "notebook",  label: "Notebook",  icon: "📓", href: "/notebook"  },
+      { id: "paperclip", label: "Paperclip", icon: "📎", href: "/paperclip" },
+      { id: "neurosync", label: "NeuroSync", icon: "🔬", href: "/neurosync" },
+      { id: "obsidian",  label: "Obsidian",  icon: "🔮", href: "/obsidian"  },
+    ],
+  },
+  {
+    id: "life",
+    label: "LIFE",
+    icon: "🌱",
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: "🏠", href: "/dashboard" },
+      { id: "calendar",  label: "Calendar",  icon: "📅", href: "/calendar"  },
+      { id: "travel",    label: "Travel",    icon: "✈️", href: "/travel"    },
+      { id: "family",    label: "Family",    icon: "👨‍👩‍👧", href: "/family"    },
+      { id: "goals",     label: "Goals",     icon: "🎯", href: "/goals"     },
+      { id: "journal",   label: "Journal",   icon: "📖", href: "/journal"   },
+    ],
+  },
+  {
+    id: 'home',
+    label: 'HOME',
+    icon: '🏠',
+    items: [
+      { id: 'security', label: 'Security Cameras', icon: '📹', href: '/home/security' },
+      { id: 'properties', label: 'Properties', icon: '🏘️', href: '/home/properties' },
+      { id: 'maintenance', label: 'Maintenance', icon: '🔧', href: '/home/maintenance' },
+      { id: 'photos', label: 'Photos', icon: '🖼️', href: '/home/photos' },
+    ],
+  },
+  {
+    id: "system",
+    label: "SYSTEM",
+    icon: "⚙️",
+    items: [
+      { id: "mission",  label: "Mission Control", icon: "🖥️", href: "/mission"  },
+      { id: "secrets",  label: "Secrets Vault",   icon: "🔑", href: "/secrets"  },
+      { id: "logs",     label: "Logs",            icon: "📜", href: "/logs"     },
+      { id: "settings", label: "Settings",        icon: "⚙️", href: "/settings" },
+      { id: "help",     label: "Help",            icon: "❓", href: "/help"     },
+    ],
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Sidebar component                                                   */
+/* ------------------------------------------------------------------ */
+
+interface SidebarProps {
+  activePage: string;
+  onNavigate: (page: string) => void;
+}
+
+export function Sidebar({ activePage, onNavigate }: SidebarProps) {
+  // Default: AGENTS expanded, rest collapsed
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    agents: true,
+    tools:  false,
+    life:   false,
+    system: false,
+  });
+
+  const toggleSection = (sectionId: string) => {
+    setExpanded((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
+  };
+
+  return (
+    <aside className="relative z-20 flex h-full w-[240px] md:w-[240px] shrink-0 flex-col border-r border-white/5 bg-black/20 backdrop-blur-xl overflow-y-auto">
+
+      {/* Logo / brand */}
+      <div className="px-4 py-5 border-b border-white/5">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-white/30">
+          Mission Control
+        </p>
+        <p className="mt-1 font-mono text-sm text-white">lucyanne@local</p>
+      </div>
+
+      {/* Nav sections */}
+      <nav className="flex flex-col gap-1 px-2 py-3 flex-1">
+        {NAV_SECTIONS.map((section) => {
+          const isExpanded = expanded[section.id] ?? false;
+
+          return (
+            <div key={section.id} className="mb-1">
+              {/* Section header */}
+              <button
+                onClick={() => toggleSection(section.id)}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-widest text-white/40 hover:text-white/70 hover:bg-white/[0.03] transition-colors"
+              >
+                {/* Emoji icon — always visible */}
+                <span className="text-sm">{section.icon}</span>
+
+                {/* Label — hidden on mobile */}
+                <span className="hidden md:block flex-1 text-left">
+                  {section.label}
+                </span>
+
+                {/* Chevron — hidden on mobile */}
+                <span
+                  className={cn(
+                    "hidden md:block text-white/30 transition-transform duration-200",
+                    isExpanded ? "rotate-180" : "rotate-0"
+                  )}
+                >
+                  ▾
+                </span>
+              </button>
+
+              {/* Section items */}
+              {isExpanded && (
+                <div className="mt-0.5 flex flex-col gap-0.5">
+                  {section.items.map((item) => {
+                    const isActive = activePage === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => onNavigate(item.id)}
+                        title={item.label}
+                        className={cn(
+                          "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                          isActive
+                            ? "bg-white/[0.08] text-white"
+                            : "text-white/50 hover:bg-white/[0.04] hover:text-white/90"
+                        )}
+                      >
+                        {/* Active indicator bar */}
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-full bg-cyan-400" />
+                        )}
+
+                        {/* Emoji icon — always visible */}
+                        <span className="text-base leading-none">{item.icon}</span>
+
+                        {/* Label — hidden on mobile (< md) */}
+                        <span className="hidden md:block truncate">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+    </aside>
+  );
+}
+
+export default Sidebar;

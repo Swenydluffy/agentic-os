@@ -1,0 +1,269 @@
+"use client";
+
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                               */
+/* ------------------------------------------------------------------ */
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+interface NavSection {
+  id: string;
+  label: string;
+  icon: string;
+  accent: string;
+  indicatorColor: string;
+  headerBg: string;
+  items: NavItem[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Nav data — 5 panels, each with distinct visual identity            */
+/* ------------------------------------------------------------------ */
+
+const NAV_SECTIONS: NavSection[] = [
+  /* ── AGENTS 🤖  dark electric blue ──────────────────────────── */
+  {
+    id: "agents",
+    label: "AGENTS",
+    icon: "🤖",
+    accent: "#3b82f6",
+    indicatorColor: "#60a5fa",
+    headerBg: "rgba(59,130,246,0.08)",
+    items: [
+      { id: "hermes",  label: "Hermes Chat",   icon: "⚡" },
+      { id: "ruflo",   label: "Ruflo Swarm",   icon: "🕸️" },
+      { id: "models",  label: "Models",        icon: "🧠" },
+      { id: "cost",    label: "Cost Monitor",  icon: "💰" },
+    ],
+  },
+
+  /* ── TOOLS 🛠️  cool slate ────────────────────────────────────── */
+  {
+    id: "tools",
+    label: "TOOLS",
+    icon: "🛠️",
+    accent: "#64748b",
+    indicatorColor: "#94a3b8",
+    headerBg: "rgba(100,116,139,0.08)",
+    items: [
+      { id: "kanban",    label: "Kanban",         icon: "📋" },
+      { id: "notebook",  label: "Notebook",       icon: "📓" },
+      { id: "paperclip", label: "Paperclip",      icon: "📎" },
+      { id: "neurosync", label: "NeuroSync",      icon: "🔬" },
+      { id: "obsidian",  label: "Obsidian",       icon: "🔮" },
+      { id: "logs",      label: "Logs",           icon: "📜" },
+      { id: "memory",    label: "Memory Palace",  icon: "🧬" },
+    ],
+  },
+
+  /* ── LIFE 🌱  warm emerald green ─────────────────────────────── */
+  {
+    id: "life",
+    label: "LIFE",
+    icon: "🌱",
+    accent: "#10b981",
+    indicatorColor: "#34d399",
+    headerBg: "rgba(16,185,129,0.08)",
+    items: [
+      { id: "calendar",    label: "Calendar",          icon: "📅" },
+      { id: "travel",      label: "Travel",            icon: "✈️" },
+      { id: "family",      label: "Family",            icon: "👨‍👩‍👧" },
+      { id: "goals",       label: "Goals",             icon: "🎯" },
+      { id: "journal",     label: "Journal",           icon: "📖" },
+      { id: "entertainment", label: "Entertainment",   icon: "🎬" },
+      { id: "music",       label: "Music",             icon: "🎵" },
+      { id: "debate",      label: "Debate Coach",      icon: "🗣️" },
+      { id: "speech",      label: "Speech Writer",     icon: "📝" },
+      { id: "gratitude",   label: "Gratitude Journal", icon: "🙏" },
+      { id: "habits",      label: "Habits",            icon: "✅" },
+      { id: "hurricane",   label: "Hurricane Monitor", icon: "🌀" },
+      { id: "security",    label: "Security Cameras",  icon: "📹" },
+      { id: "photos",      label: "Photos",            icon: "🖼️" },
+      { id: "secrets",     label: "Secrets Vault",     icon: "🔑" },
+    ],
+  },
+
+  /* ── BUSINESS 💼  deep amber ─────────────────────────────────── */
+  {
+    id: "business",
+    label: "BUSINESS",
+    icon: "💼",
+    accent: "#f59e0b",
+    indicatorColor: "#fbbf24",
+    headerBg: "rgba(245,158,11,0.08)",
+    items: [
+      { id: "biz-intelligence",  label: "Business Intelligence",  icon: "📊" },
+      { id: "neighborhood",      label: "Neighborhood Monitor",   icon: "🏘️" },
+      { id: "legal",             label: "Legal Documents",        icon: "⚖️" },
+      { id: "meetings",          label: "Meeting Assistant",      icon: "🤝" },
+      { id: "negotiator",        label: "Price Negotiator",       icon: "💵" },
+      { id: "content",           label: "Content Machine",        icon: "🏭" },
+      { id: "social",            label: "Social Media",           icon: "📱" },
+      { id: "property-tracker",  label: "Property Tracker",       icon: "🗺️" },
+      { id: "contractor",        label: "Contractor Monitor",     icon: "🔨" },
+      { id: "competition",       label: "Competition Watcher",    icon: "👁️" },
+      { id: "affiliate",         label: "Affiliate Manager",      icon: "🔗" },
+      { id: "reputation",        label: "Reputation Manager",     icon: "⭐" },
+      { id: "tax",               label: "Tax Assistant",          icon: "🧾" },
+      { id: "airbnb",            label: "Airbnb Manager",         icon: "🏡" },
+      { id: "mindinsurance",     label: "Mind Insurance",         icon: "🧠" },
+      { id: "chickens",          label: "Raising Chickens",       icon: "🐓" },
+      { id: "medellin",          label: "Medellin Lodging",       icon: "🌴" },
+      { id: "sweeney",           label: "Sweeney & Clancy",       icon: "🏛️" },
+      { id: "emailwriter",       label: "Email Writer",           icon: "✉️" },
+    ],
+  },
+
+  /* ── HELP ❓  clean white/silver ─────────────────────────────── */
+  {
+    id: "help",
+    label: "HELP",
+    icon: "❓",
+    accent: "#e2e8f0",
+    indicatorColor: "#cbd5e1",
+    headerBg: "rgba(226,232,240,0.08)",
+    items: [
+      { id: "tutorial",   label: "Interactive Tutorial", icon: "🎓" },
+      { id: "properties", label: "Properties",           icon: "🏘️" },
+      { id: "maintenance",label: "Maintenance",          icon: "🔧" },
+    ],
+  },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
+interface SidebarProps {
+  activeView: string;
+  onViewChange: (view: string) => void;
+}
+
+export default function Sidebar({ activeView, onViewChange }: SidebarProps) {
+  // Which sections are expanded — default all open
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(
+    Object.fromEntries(NAV_SECTIONS.map((s) => [s.id, true]))
+  );
+
+  const toggleSection = (id: string) =>
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  // Derive which panel is active (for coloured sidebar border)
+  const activeSection =
+    NAV_SECTIONS.find((s) => s.items.some((i) => i.id === activeView)) ??
+    NAV_SECTIONS[0];
+
+  return (
+    <nav
+      className="flex flex-col h-full overflow-y-auto"
+      style={{
+        width: 220,
+        background: "#0f1117",
+        borderRight: `2px solid ${activeSection.accent}33`,
+      }}
+    >
+      {/* Logo */}
+      <div
+        className="flex items-center gap-2 px-4 py-4 border-b"
+        style={{ borderColor: "#1e2330" }}
+      >
+        <span className="text-xl">🛰️</span>
+        <span
+          className="font-bold tracking-widest text-xs uppercase"
+          style={{ color: activeSection.accent }}
+        >
+          Mission Control
+        </span>
+      </div>
+
+      {/* Sections */}
+      <div className="flex-1 py-2">
+        {NAV_SECTIONS.map((section) => {
+          const isActive = section.items.some((i) => i.id === activeView);
+          const isOpen = expanded[section.id];
+
+          return (
+            <div key={section.id} className="mb-1">
+              {/* Section header */}
+              <button
+                onClick={() => toggleSection(section.id)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-all"
+                style={{
+                  background: isActive ? section.headerBg : "transparent",
+                  borderLeft: isActive
+                    ? `3px solid ${section.accent}`
+                    : "3px solid transparent",
+                }}
+              >
+                <span className="text-sm">{section.icon}</span>
+                <span
+                  className="text-xs font-bold tracking-widest flex-1"
+                  style={{ color: isActive ? section.accent : "#64748b" }}
+                >
+                  {section.label}
+                </span>
+                <span
+                  className="text-xs"
+                  style={{ color: isActive ? section.accent : "#475569" }}
+                >
+                  {isOpen ? "▾" : "▸"}
+                </span>
+              </button>
+
+              {/* Items */}
+              {isOpen && (
+                <div className="pb-1">
+                  {section.items.map((item) => {
+                    const itemActive = activeView === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => onViewChange(item.id)}
+                        className="w-full flex items-center gap-2 px-4 py-1.5 text-left text-xs transition-all"
+                        style={{
+                          background: itemActive
+                            ? `${section.accent}18`
+                            : "transparent",
+                          borderLeft: itemActive
+                            ? `3px solid ${section.accent}`
+                            : "3px solid transparent",
+                          color: itemActive ? section.accent : "#94a3b8",
+                          marginLeft: 4,
+                        }}
+                      >
+                        <span>{item.icon}</span>
+                        <span
+                          className={cn(
+                            "truncate",
+                            itemActive ? "font-semibold" : "font-normal"
+                          )}
+                        >
+                          {item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      <div
+        className="px-4 py-3 text-xs border-t"
+        style={{ borderColor: "#1e2330", color: "#334155" }}
+      >
+        Hermes OS · Brad
+      </div>
+    </nav>
+  );
+}

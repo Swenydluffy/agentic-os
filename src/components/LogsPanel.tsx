@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 interface CronLog {
   name: string;
   lastRun: string | null;
-  status: "ok" | "error" | "unknown";
+  status: "ok" | "error" | "unknown" | "paused";
   output: string;
 }
 interface SessionLog {
@@ -130,6 +130,7 @@ const STATUS_ICON = {
   failed: <XCircle size={13} className="text-[var(--color-danger)]" />,
   running: <CircleDashed size={13} className="spin text-[var(--color-cyan)]" />,
   unknown: <CircleDashed size={13} className="text-[var(--color-ink-faint)]" />,
+  paused:  <CircleDashed size={13} style={{color: "#facc15"}} />,
 } as const;
 
 export function LogsPanel() {
