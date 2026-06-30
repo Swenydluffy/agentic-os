@@ -12,12 +12,13 @@ import { JournalPanel } from "@/components/JournalPanel";
 import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
 import { HermesTelegramPanel } from "@/components/HermesTelegramPanel";
+import { TelegramThreadPanel } from "@/components/TelegramThreadPanel";
 import { HermesMCPanel } from "@/components/HermesMCPanel";
 import { ResizableDivider } from "@/components/ResizableDivider";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModelRouterRail } from "@/components/ModelRouterRail";
 import { RufloExpandableStrip } from "@/components/RufloExpandableStrip";
-import { MemoryHealthBar } from "@/components/MemoryHealthBar";
+import { VaultStatusBar } from "@/components/VaultStatusBar";
 import { MetricBar } from "@/components/MetricBar";
 import { WorkToolsStrip } from "@/components/MetricBar";
 import { NotebookPanel } from "@/components/NotebookPanel";
@@ -41,6 +42,8 @@ import { NeuralPanel } from "@/components/NeuralPanel";
 import { CostMonitorPanel } from "@/components/CostMonitorPanel";
 import { MemoryPalacePanel } from "@/components/MemoryPalacePanel";
 import { BusinessPanel } from "@/components/BusinessPanel";
+import NotesPanel from "@/components/NotesPanel";
+import { LearnHermesPanel } from "@/components/LearnHermesPanel";
 import { CalendarPanel } from "@/components/CalendarPanel";
 import { CommandPalette } from "@/components/CommandPalette";
 
@@ -97,7 +100,8 @@ export default function Page() {
     | "hurricane" | "biz-intelligence" | "neighborhood" | "legal" | "meetings"
     | "negotiator" | "content" | "social" | "property-tracker" | "contractor"
     | "competition" | "affiliate" | "reputation" | "tax" | "airbnb"
-    | "emailwriter" | "tutorial" | "quickref" | "whatsnew";
+    | "emailwriter" | "tutorial" | "quickref" | "whatsnew" | "learnhermes"
+    | "notes";
 
   // Each nav id maps to a panel; anything unknown falls back to the dashboard.
   const PANELS: Record<string, View> = {
@@ -122,6 +126,8 @@ export default function Page() {
     reputation: "reputation", tax: "tax", airbnb: "airbnb",
     emailwriter: "emailwriter", tutorial: "tutorial", quickref: "quickref",
     whatsnew: "whatsnew",
+    learnhermes: "learnhermes",
+    notes: "notes",
   };
   const view: View = PANELS[activeNav] ?? "dashboard";
 
@@ -569,6 +575,29 @@ export default function Page() {
             </div>
           )}
 
+          {view === "notes" && (
+            <div className="h-full p-4 lg:p-6">
+              <NotesPanel onNavigate={setActiveNav} />
+            </div>
+          )}
+
+          {view === "learnhermes" && (
+            <div className="h-full p-4 lg:p-6">
+              <LearnHermesPanel
+                onNavigate={setActiveNav}
+                onPopulateChat={(text) => {
+                  const ta = document.getElementById('ai-console-textarea') as HTMLTextAreaElement | null;
+                  if (ta) {
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                    nativeInputValueSetter?.call(ta, text);
+                    ta.dispatchEvent(new Event('input', { bubbles: true }));
+                    ta.focus();
+                  }
+                }}
+              />
+            </div>
+          )}
+
           {view === "sweeney" && (
             <div className="h-full p-4 lg:p-6">
               <ComingSoon title="Sweeney & Clancy" description="Legal counsel contacts, case tracker, and document vault." icon={Radio} />
@@ -622,18 +651,18 @@ function WorkspaceLayout({ selectedAgent, onNavigate }: { selectedAgent?: string
         {/* MetricBar + Ruflo expandable strip */}
         <MetricBar />
         <RufloExpandableStrip />
-        <MemoryHealthBar />
+        <VaultStatusBar />
 
         {/* Three chat panels */}
         <div style={{ flex:1, display:"flex", overflow:"hidden" }}>
 
-          {/* Panel 1: Hermes — Telegram (main thread) */}
-          <div style={{ width: tgW || undefined, flex: tgW ? undefined : 1, minWidth: 280, overflow:"hidden" }}>
-            <HermesTelegramPanel />
+          {/* Panel 1: AI Console (Claude) */}
+          <div style={{ width: clW || undefined, flex: clW ? undefined : 1, minWidth: 280, overflow:"hidden" }}>
+            <ChatPanel pinnedAgent={selectedAgent} />
           </div>
 
           <ResizableDivider onDrag={d => {
-            setTgW(w => {
+            setClW(w => {
               const cur = w || 400;
               return clamp(cur + d, 280, 900);
             });
@@ -651,9 +680,9 @@ function WorkspaceLayout({ selectedAgent, onNavigate }: { selectedAgent?: string
             });
           }} />
 
-          {/* Panel 3: Claude Console */}
-          <div style={{ width: clW || undefined, flex: clW ? undefined : 1, minWidth: 280, overflow:"hidden" }}>
-            <ChatPanel pinnedAgent={selectedAgent} />
+          {/* Panel 3: Telegram — Medellin Lodging Agent */}
+          <div style={{ width: tgW || undefined, flex: tgW ? undefined : 1, minWidth: 280, overflow:"hidden", display:"flex", flexDirection:"column" }}>
+            <TelegramThreadPanel />
           </div>
 
         </div>

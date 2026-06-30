@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/balance": {},
+    "/api/chat": {},
+    "/api/config": {},
+    "/api/dispatch": {},
+    "/api/guide": {},
+    "/api/health": {},
+    "/api/hermes": {
+      "maxDuration": 300
+    },
+    "/api/hermes-health": {},
+    "/api/hermes-memory": {},
+    "/api/hermes-stream": {
+      "maxDuration": 300
+    },
+    "/api/logs": {},
+    "/api/memory-health": {},
+    "/api/models": {},
+    "/api/neurosync": {},
+    "/api/notebook": {},
+    "/api/notebook/asset": {},
+    "/api/notebooklm": {},
+    "/api/obsidian": {},
+    "/api/omi": {},
+    "/api/ruflo": {
+      "maxDuration": 60
+    },
+    "/api/secrets": {},
+    "/api/tg-messages": {},
+    "/api/tg-send": {
+      "maxDuration": 30
+    },
+    "/api/tts": {
+      "maxDuration": 60
+    },
+    "/api/twitter": {},
+    "/api/vault": {},
+    "/api/workflows": {}
+  }
+}

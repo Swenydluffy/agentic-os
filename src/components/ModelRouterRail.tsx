@@ -54,6 +54,47 @@ function Spinner() {
   return <span style={{ display:"inline-block", width:11, height:11, border:"2px solid rgba(255,255,255,0.15)", borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite", verticalAlign:"middle" }} />;
 }
 
+// ─── AgentsTile — mini inline component for agents count ────────────────────
+function AgentsTile() {
+  const [ruflo, setRuflo] = useState<{
+    online?: boolean;
+    activeAgents?: number;
+    totalAgents?: number;
+    agents?: Array<{ status: string }>;
+  } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const r = await fetch("/api/ruflo", { cache: "no-store" });
+        if (r.ok && mounted) setRuflo(await r.json());
+      } catch { /* silent */ }
+    }
+    void load();
+    const iv = setInterval(load, 30_000);
+    return () => { mounted = false; clearInterval(iv); };
+  }, []);
+
+  const agents = ruflo?.agents ?? [];
+  const active = ruflo?.activeAgents ?? agents.filter(a => a.status === "running").length;
+  const total  = ruflo?.totalAgents ?? agents.length;
+  const isOffline = ruflo?.online === false;
+  const dotColor = isOffline ? "#ef4444" : "#22c55e";
+  const idleCount = agents.filter(a => a.status === "idle").length;
+
+  return (
+    <>
+      <div style={{ fontSize: 15, fontWeight: 700, color: dotColor, fontFamily: "monospace", lineHeight: 1 }}>
+        {ruflo ? `${active}/${total}` : "—"}
+      </div>
+      <div style={{ fontSize: 9, color: "#4b5563", marginTop: 2 }}>
+        {isOffline ? "Ruflo offline" : ruflo ? `${idleCount} idle` : "loading…"}
+      </div>
+    </>
+  );
+}
+
 export function ModelRouterRail() {
   const [cost, setCost]       = useState<CostData | null>(null);
   const [costErr, setCostErr] = useState<string | null>(null);
@@ -209,16 +250,19 @@ export function ModelRouterRail() {
             type="button"
             onClick={async () => {
               setBalRefreshing(true);
+              setBalFlash(false);
               await fetchBal();
               setBalRefreshing(false);
+              setBalFlash(true);
+              setTimeout(() => setBalFlash(false), 1500);
             }}
             title="Refresh balance now"
-            style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:26, height:26, borderRadius:5, border:"1px solid #374151", background:"#0d1117", color:"#9ca3af", cursor:"pointer", flexShrink:0, transition:"all 0.12s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "#f9fafb"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#6b7280"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#9ca3af"; (e.currentTarget as HTMLButtonElement).style.borderColor = "#374151"; }}
+            style={{ display:"inline-flex", alignItems:"center", justifyContent:"center", width:26, height:26, borderRadius:5, border:`1px solid ${balFlash ? "#22c55e" : "#374151"}`, background: balFlash ? "rgba(34,197,94,0.15)" : "#0d1117", color: balFlash ? "#22c55e" : "#9ca3af", cursor:"pointer", flexShrink:0, transition:"all 0.2s" }}
+            onMouseEnter={e => { if(!balFlash){(e.currentTarget as HTMLButtonElement).style.color="#f9fafb";(e.currentTarget as HTMLButtonElement).style.borderColor="#6b7280";} }}
+            onMouseLeave={e => { if(!balFlash){(e.currentTarget as HTMLButtonElement).style.color="#9ca3af";(e.currentTarget as HTMLButtonElement).style.borderColor="#374151";} }}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-              style={{ animation: balRefreshing ? "spin 0.5s linear" : "none" }}>
+              style={{ animation: balRefreshing ? "spin 0.6s linear infinite" : "none" }}>
               <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
             </svg>
           </button>
@@ -239,6 +283,30 @@ export function ModelRouterRail() {
         </div>
 
         {costErr && <div style={{ fontSize:11, color:"#ef4444", marginTop:7 }}>⚠ {costErr}</div>}
+
+        {/* ── Tokens Burned + Agents Online mini-tiles ── */}
+        <div style={{ display:"flex", gap:6, marginTop:8 }}>
+          {/* Tokens Burned */}
+          <div style={{ flex:1, background:"#0d1117", border:"1px solid #1f2937", borderRadius:7, padding:"7px 10px" }}>
+            <div style={{ fontSize:9, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.1em", marginBottom:3 }}>Tokens Burned</div>
+            <div style={{ fontSize:15, fontWeight:700, color:"#f59e0b", fontFamily:"monospace", lineHeight:1 }}>
+              {(() => {
+                const totalTok = (cost?.models ?? []).reduce((s,m) => s+(m.input_tokens??0)+(m.output_tokens??0), 0);
+                if (totalTok >= 1_000_000) return (totalTok/1_000_000).toFixed(1)+"M";
+                if (totalTok >= 1_000)     return (totalTok/1_000).toFixed(0)+"K";
+                return totalTok > 0 ? String(totalTok) : (cost ? "0" : "—");
+              })()}
+            </div>
+            <div style={{ fontSize:9, color:"#4b5563", marginTop:2 }}>
+              {cost?.burn_rate?.cost_per_hour ? "~$"+(cost.burn_rate.cost_per_hour*24).toFixed(2)+" est today" : "all sessions"}
+            </div>
+          </div>
+          {/* Agents Online */}
+          <div style={{ flex:1, background:"#0d1117", border:"1px solid #1f2937", borderRadius:7, padding:"7px 10px" }}>
+            <div style={{ fontSize:9, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.1em", marginBottom:3 }}>Agents Online</div>
+            <AgentsTile />
+          </div>
+        </div>
       </div>
 
       {/* ── SCROLLABLE ── */}

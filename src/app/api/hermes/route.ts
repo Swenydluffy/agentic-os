@@ -8,11 +8,21 @@ export const dynamic = "force-dynamic";
 // An agent run can take a while; allow a generous server-side budget.
 export const maxDuration = 300;
 
-/** LIVE/OFFLINE status via Hermes' /api/status. */
-export async function GET() {
-  const { hermes } = loadConfig();
-  const status = await pingHermes(hermes);
-  return Response.json({ ok: true, ...status });
+/** LIVE/OFFLINE status — fetches notes.wynneops.com public health endpoint directly. */
+export async function GET(_req: NextRequest) {
+  try {
+    const res = await fetch('https://notes.wynneops.com/api/hermes/health', {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) {
+      return Response.json({ ok: true, online: false, error: 'HTTP ' + res.status });
+    }
+    const data = await res.json();
+    return Response.json({ ok: true, ...data });
+  } catch (e) {
+    return Response.json({ ok: true, online: false, error: String(e) });
+  }
 }
 
 /** Route a chat message to the real Hermes server (not the Claude API). */

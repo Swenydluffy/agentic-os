@@ -1,0 +1,3 @@
+{
+  "/api/tg-send/route": "app/api/tg-send/route.js"
+}

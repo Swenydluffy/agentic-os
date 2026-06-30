@@ -41,6 +41,7 @@ const PLACEHOLDER: HealthItem[] = [
   { id: "onnx",         label: "ONNX Index",  status: "unknown", detail: "checking…", updatedAt: null },
   { id: "mc-panels",    label: "MC Panels",   status: "unknown", detail: "checking…", updatedAt: null },
   { id: "phone",        label: "Phone",       status: "unknown", detail: "checking…", updatedAt: null },
+  { id: "hermes-brain", label: "Brain",       status: "unknown", detail: "checking…", updatedAt: null },
 ];
 
 export function MemoryHealthBar() {
@@ -51,10 +52,25 @@ export function MemoryHealthBar() {
 
   async function refresh() {
     try {
-      const res = await fetch("/api/memory-health", { cache: "no-store" });
-      if (res.ok) {
-        const data = await res.json() as HealthItem[];
-        setItems(data);
+      const [healthRes, brainRes] = await Promise.all([
+        fetch("/api/memory-health", { cache: "no-store" }),
+        fetch("/api/hermes-memory", { cache: "no-store" }).catch(() => null),
+      ]);
+      if (healthRes.ok) {
+        const data = await healthRes.json() as HealthItem[];
+        // Merge brain indicator
+        let brainItem: HealthItem = { id: "hermes-brain", label: "Brain", status: "unknown", detail: "checking…", updatedAt: null };
+        if (brainRes && brainRes.ok) {
+          try {
+            const b = await brainRes.json() as { pct?: number; chars?: number; limit?: number; ok?: boolean };
+            const pct = b.pct ?? (b.chars && b.limit ? Math.round(b.chars / b.limit * 100) : null);
+            if (pct !== null) {
+              const status: Status = pct >= 95 ? "red" : pct >= 80 ? "yellow" : "green";
+              brainItem = { id: "hermes-brain", label: "Brain", status, detail: `${pct}% (${b.chars ?? "?"}/${b.limit ?? "?"} chars)`, updatedAt: new Date().toISOString() };
+            }
+          } catch { /* keep unknown */ }
+        }
+        setItems([...data, brainItem]);
         setLastFetch(new Date());
       }
     } catch {

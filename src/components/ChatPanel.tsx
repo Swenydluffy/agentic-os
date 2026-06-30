@@ -81,24 +81,41 @@ function ConsoleModelSelector({
   onChange: (m: typeof CONSOLE_MODELS[number]) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [dropPos, setDropPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const btn = btnRef.current;
+      const drop = dropRef.current;
+      if (btn && !btn.contains(e.target as Node) && drop && !drop.contains(e.target as Node)) {
+        setOpen(false);
+      }
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
+  function toggleOpen() {
+    if (open) { setOpen(false); return; }
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      // Open below button, right-aligned to button right edge
+      setDropPos({ top: r.bottom + 6, left: r.right - 190 });
+    }
+    setOpen(true);
+  }
+
   return (
-    <div ref={ref} style={{ position: "relative", display: "flex", alignItems: "center" }}>
+    <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
       {/* Trigger */}
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={toggleOpen}
         style={{
           display: "flex", alignItems: "center", gap: 6,
           padding: "4px 10px", borderRadius: 8,
@@ -122,14 +139,17 @@ function ConsoleModelSelector({
         <ChevronDown size={10} style={{ opacity: 0.6, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
       </button>
 
-      {/* Dropdown */}
-      {open && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 999,
-          background: "#0d1117", border: "1px solid rgba(255,255,255,0.12)",
-          borderRadius: 10, padding: 4, minWidth: 190,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-        }}>
+      {/* Dropdown — position:fixed escapes all overflow:hidden ancestors */}
+      {open && dropPos && (
+        <div
+          ref={dropRef}
+          style={{
+            position: "fixed", top: dropPos.top, left: dropPos.left, zIndex: 99999,
+            background: "#0d1117", border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 10, padding: 4, minWidth: 190,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
+          }}
+        >
           {/* Header label */}
           <div style={{ padding: "4px 10px 6px", fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", color: "#4b5563", textTransform: "uppercase" }}>
             AI Console — Top Tier
