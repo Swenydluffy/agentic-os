@@ -1,29 +1,46 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const NOTES_URL = process.env.NOTES_SERVER_URL ?? 'http://31.220.63.57:9120';
-  
-
+  const tok = process.env.NOTES_TOKEN ?? "notes-wynneops-2026";
   try {
-    const res = await fetch(`${NOTES_URL}/api/cost`, {
-      headers: {
-        'x-notes-token': process.env.NOTES_TOKEN ?? "notes-wynneops-2026",
-      },
+    // Fetch the two-lights status from VPS notes server
+    const res = await fetch("https://notes.wynneops.com/api/cost", {
+      cache: "no-store",
+      headers: { "x-notes-token": tok },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {
-      throw new Error(`Upstream responded with ${res.status} ${res.statusText}`);
+      return NextResponse.json({
+        hermesBrain: "red",
+        obsidianBrain: "red",
+        error: "HTTP " + res.status,
+      });
     }
 
     const data = await res.json();
-    return NextResponse.json(data);
-  } catch (err: unknown) {
-    const error = err instanceof Error ? err.message : String(err);
+
+    // Transform from notes_server format to StatusStrip format
+    const hermesBrain = data.hermes_brain?.status === "GREEN" ? "green" : "red";
+    const obsidianBrain = data.obsidian_brain?.status === "GREEN" ? "green" : "red";
+
     return NextResponse.json(
-      { ok: false, error, total: 0, limit: 5, providers: {} },
-      { status: 502 }
+      { hermesBrain, obsidianBrain },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          "Pragma": "no-cache",
+        },
+      }
     );
+  } catch (e) {
+    return NextResponse.json({
+      hermesBrain: "red",
+      obsidianBrain: "red",
+      error: String(e),
+    });
   }
 }

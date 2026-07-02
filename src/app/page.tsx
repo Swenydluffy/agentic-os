@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Bot, Coins, Gauge, Sparkles, Zap, Server, Radio } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
-import Sidebar from "@/components/Sidebar";
 import { ChatPanel } from "@/components/ChatPanel";
 import { AgentChat } from "@/components/AgentChat";
 import { GoalsPanel } from "@/components/GoalsPanel";
@@ -17,8 +16,7 @@ import { HermesMCPanel } from "@/components/HermesMCPanel";
 import { ResizableDivider } from "@/components/ResizableDivider";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ModelRouterRail } from "@/components/ModelRouterRail";
-import { RufloExpandableStrip } from "@/components/RufloExpandableStrip";
-import { VaultStatusBar } from "@/components/VaultStatusBar";
+import { StatusStrip } from "@/components/StatusStrip";
 import { MetricBar } from "@/components/MetricBar";
 import { WorkToolsStrip } from "@/components/MetricBar";
 import { NotebookPanel } from "@/components/NotebookPanel";
@@ -138,7 +136,6 @@ export default function Page() {
 
   return (
     <main className="relative z-10 flex h-screen w-screen overflow-hidden">
-      <Sidebar activeView={activeNav} onViewChange={setActiveNav} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar onOpenPalette={() => setPaletteOpen(true)} />
@@ -648,10 +645,10 @@ function WorkspaceLayout({ selectedAgent, onNavigate }: { selectedAgent?: string
       <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minWidth:0 }}>
         {/* Work tools strip */}
         <WorkToolsStrip onNavigate={onNavigate} />
-        {/* MetricBar + Ruflo expandable strip */}
+        {/* MetricBar + status strip */}
         <MetricBar />
-        <RufloExpandableStrip />
-        <VaultStatusBar />
+
+        <StatusStrip />
 
         {/* Three chat panels */}
         <div style={{ flex:1, display:"flex", overflow:"hidden" }}>

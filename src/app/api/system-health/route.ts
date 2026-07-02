@@ -7,7 +7,7 @@ export async function GET() {
   const tok = process.env.NOTES_TOKEN ?? "notes-wynneops-2026";
   try {
     // Fetch the two-lights status from VPS notes server
-    const res = await fetch("http://31.220.63.57:9120/api/system-health", {
+    const res = await fetch("https://notes.wynneops.com/api/system-health", {
       cache: "no-store",
       headers: { "x-notes-token": tok },
       signal: AbortSignal.timeout(5000),
@@ -15,8 +15,8 @@ export async function GET() {
 
     if (!res.ok) {
       return NextResponse.json({
-        hermesBrain: "red",
-        obsidianBrain: "red",
+        hermesLight: "red",
+        obsidianLight: "red",
         error: "HTTP " + res.status,
       });
     }
@@ -24,11 +24,11 @@ export async function GET() {
     const data = await res.json();
 
     // Transform from notes_server format to StatusStrip format
-    const hermesBrain = data.hermes_brain?.status === "GREEN" ? "green" : "red";
-    const obsidianBrain = data.obsidian_brain?.status === "GREEN" ? "green" : "red";
+    const hermesLight = data.hermes_brain?.status === "GREEN" ? "green" : "red";
+    const obsidianLight = data.obsidian_brain?.status === "GREEN" ? "green" : "red";
 
     return NextResponse.json(
-      { hermesBrain, obsidianBrain },
+      { hermesLight, obsidianLight },
       {
         headers: {
           "Cache-Control": "no-store, no-cache, must-revalidate",
@@ -38,8 +38,8 @@ export async function GET() {
     );
   } catch (e) {
     return NextResponse.json({
-      hermesBrain: "red",
-      obsidianBrain: "red",
+      hermesLight: "red",
+      obsidianLight: "red",
       error: String(e),
     });
   }
