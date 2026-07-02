@@ -44,9 +44,5 @@ export function loadConfig(): AppConfig {
     token: process.env.HERMES_TOKEN?.trim() || merged.hermes.token,
   };
 
-  const ruflo = {
-    url: process.env.RUFLO_URL?.trim() || merged.ruflo.url,
-  };
-
-  return { ...merged, vault: { path, folder }, hermes, ruflo };
+  return { ...merged, vault: { path, folder }, hermes };
 }

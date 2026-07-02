@@ -38,10 +38,10 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   },
   {
     id: 3,
-    title: "Ruflo Swarm Orchestration",
+    title: "Hermes Agent Orchestration",
     description:
-      "Need multiple AI agents working in parallel? Ruflo Swarm lets you spin up a coordinated team of agents for complex, multi-step tasks.",
-    panel: "🤖 AGENTS → Ruflo Swarm",
+      "Hermes coordinates multiple AI tasks in parallel through the gateway.",
+    panel: "🤖 AGENTS → Hermes Workers",
     tryItLabel: "Explore Swarm",
   },
   {

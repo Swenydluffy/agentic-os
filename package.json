@@ -8,7 +8,7 @@
     "dev": "next dev",
     "prestart": "tsx scripts/setup.ts",
     "build": "next build",
-    "start": "next start",
+    "start": "HOST=0.0.0.0 PORT=3000 next start",
     "test": "tsx scripts/test-vault.ts && tsx scripts/test-setup.ts"
   },
   "dependencies": {

@@ -31,7 +31,7 @@ export interface SystemInfo {
   loadAvg: number[];
 }
 
-const NOTES_URL   = process.env.NOTES_SERVER_URL ?? "https://notes.wynneops.com";
+const NOTES_URL   = process.env.NOTES_SERVER_URL ?? "http://31.220.63.57:9120";
 
 /** Fetch cron job logs from the notes server API. Falls back to samples on error. */
 async function readCronLogs(): Promise<CronLog[]> {
@@ -77,6 +77,56 @@ const SAMPLE_CRON: CronLog[] = [
   },
 ];
 
+/**
+ * Fetch session records from the notes server API.
+ * Falls back to hardcoded samples on error.
+ */
+async function readSessions(): Promise<SessionLog[]> {
+  try {
+    const res = await fetch(`${NOTES_URL}/api/sessions?limit=25`, {
+      headers: { "x-notes-token": process.env.NOTES_TOKEN ?? "notes-wynneops-2026" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) {
+      console.warn(`[readSessions] API returned ${res.status}, using fallback`);
+      return SAMPLE_SESSIONS;
+    }
+
+    const data = await res.json() as {
+      ok: boolean;
+      sessions?: Array<{
+        session_id: string;
+        model: string;
+        platform: string;
+        session_start: string;
+      }>;
+    };
+
+    if (!data.ok || !Array.isArray(data.sessions) || data.sessions.length === 0) {
+      console.warn(`[readSessions] No sessions returned from API, using fallback`);
+      return SAMPLE_SESSIONS;
+    }
+
+    // Transform API response to SessionLog format
+    const sessions: SessionLog[] = data.sessions.map((s) => ({
+      id: s.session_id,
+      agent: s.platform || "unknown",
+      started: s.session_start,
+      durationMs: 0,
+      status: "completed",
+      summary: `${s.model || "unknown"} session via ${s.platform || "unknown"}`,
+    }));
+
+    return sessions;
+
+  } catch (err) {
+    console.error(`[readSessions] Failed to fetch from notes server:`, err);
+    return SAMPLE_SESSIONS;
+  }
+}
+
 const SAMPLE_SESSIONS: SessionLog[] = [
   {
     id: "sess-1",
@@ -119,8 +169,9 @@ function systemInfo(): SystemInfo {
 /** GET /api/logs → { cron, sessions, system }. */
 export async function GET() {
   const cron = await readCronLogs();
+  const sessions = await readSessions();
   return Response.json({
     ok: true,
-    data: { cron, sessions: SAMPLE_SESSIONS, system: systemInfo() },
+    data: { cron, sessions, system: systemInfo() },
   });
 }

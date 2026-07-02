@@ -43,5 +43,59 @@
     "source": "mc",
     "done": true,
     "archived": true
+  },
+  {
+    "id": "a99244e5-b286-4f31-9580-24c28d445bcd",
+    "text": "\"Hermes, add to notes: Build a system where ideas discussed with Claude get captured to the Notes panel in real time, so nothing gets lost between sessions.\"",
+    "category": "Projects",
+    "created_at": "2026-07-01T10:33:08.602Z",
+    "source": "mc",
+    "done": false,
+    "archived": true
+  },
+  {
+    "id": "5b4000cc-c096-47f7-b9d6-c342d9524f0b",
+    "text": "\"Hermes, add to Lessons Learned and master plan: PORTS ARE SACRED. Never modify port configurations, port bindings, or port-related code without first providing 100% verified proof that the port is the actual problem — not a symptom, not a guess, not a hypothesis. Proof means: show what the port currently returns, show what it should return, show the exact discrepancy. Brad has seen port changes break entire systems multiple times. No port changes without verified proof and explicit authorization from Brad. This is a standing rule, no exceptions.\"",
+    "category": "To-Do",
+    "created_at": "2026-07-01T13:03:40.987Z",
+    "source": "mc",
+    "done": true,
+    "archived": false
+  },
+  {
+    "id": "d7aa9557-3a63-4efc-b145-d86fed115494",
+    "text": "The right way to find out is to ask Hermes to pull the actual token usage breakdown from OpenRouter for yesterday vs today — by hour, by model, by message type. That would show exactly what was burning tokens yesterday that isn't today. Want to ask Hermes to pull that data once he finishes the Ruflo removal?",
+    "category": "General",
+    "created_at": "2026-07-01T14:35:21.178Z",
+    "source": "mc",
+    "done": false,
+    "archived": false
+  },
+  {
+    "id": "5fb43d83-6710-4223-8e47-a5d94238479f",
+    "text": "What we should do after this memory fix is confirmed working: audit all the master plan rules and identify which ones could be code-enforced vs which must stay behavioral. Then build enforcement where possible.",
+    "category": "To-Do",
+    "created_at": "2026-07-01T14:42:29.959Z",
+    "source": "mc",
+    "done": false,
+    "archived": true
+  },
+  {
+    "id": "3c4d686d-f8de-442f-860b-21091f66d120",
+    "text": "\"Hermes, go ahead — build the hard enforcement exactly as proposed. All 5 steps. Then run the memory cleanup (remove entry 4, simplify entry 5, move entries 3 and 6 to skills). Verify: after cleanup, memory should be at ~65%. After enforcement is built, test it: try to write something when memory is above 75% and confirm it blocks with the error message. Real proof before reporting done.\"",
+    "category": "To-Do",
+    "created_at": "2026-07-01T14:43:33.467Z",
+    "source": "mc",
+    "done": true,
+    "archived": false
+  },
+  {
+    "id": "6ac6f8c9-de0c-4279-9adb-f2742f948ce6",
+    "text": "\"Hermes, pull the token usage breakdown from OpenRouter for yesterday June 30 vs today July 1 — by hour if possible. I need to understand why yesterday cost $300+ and today is at $6.60. Show actual token counts, not estimates. What was burning tokens yesterday that isn't today?\"",
+    "category": "To-Do",
+    "created_at": "2026-07-01T14:44:57.071Z",
+    "source": "mc",
+    "done": false,
+    "archived": false
   }
 ]

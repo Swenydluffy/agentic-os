@@ -11,7 +11,8 @@ const WORK_TOOLS = [
   { id: "secrets",     icon: "🔑", label: "Vault"     },
   { id: "security",    icon: "📹", label: "Cameras"   },
   { id: "learnhermes", icon: "🎓", label: "Learn"     },
-  { id: "notes",        icon: "📝", label: "Notes"     },
+  { id: "mindinsurance", icon: "🧠", label: "Mind"      },
+{ id: "notes",        icon: "📝", label: "Notes"     },
 ];
 
 export function WorkToolsStrip({ onNavigate }: { onNavigate: (id: string) => void }) {

@@ -34,12 +34,14 @@ function relTime(iso: string | null): string {
   return (Math.round(diffS / 360) / 10) + "h ago";
 }
 
-// Only the 4 real indicators — placeholders match final IDs
+// 6 indicators — placeholders match final IDs
 const PLACEHOLDER: HealthItem[] = [
-  { id: "vault",        label: "Obsidian Sync",  status: "unknown", detail: "checking…", updatedAt: null },
-  { id: "watcher",      label: "Telegram → Vault", status: "unknown", detail: "checking…", updatedAt: null },
-  { id: "phone",        label: "Phone → Vault",  status: "unknown", detail: "checking…", updatedAt: null },
-  { id: "hermes-memory", label: "Hermes Memory", status: "unknown", detail: "checking…", updatedAt: null },
+  { id: "vault",         label: "Obsidian Sync",    status: "unknown", detail: "checking…", updatedAt: null },
+  { id: "watcher",       label: "Telegram → Vault", status: "unknown", detail: "checking…", updatedAt: null },
+  { id: "phone",         label: "Phone → Vault",    status: "unknown", detail: "checking…", updatedAt: null },
+  { id: "hermes-memory", label: "Hermes Memory",    status: "unknown", detail: "checking…", updatedAt: null },
+  { id: "session-reset", label: "Session Reset",    status: "unknown", detail: "checking…", updatedAt: null },
+  { id: "task-state",    label: "Task State",       status: "unknown", detail: "checking…", updatedAt: null },
 ];
 
 export function VaultStatusBar() {
@@ -58,10 +60,12 @@ export function VaultStatusBar() {
       if (!healthRes.ok) return;
       const allItems = await healthRes.json() as HealthItem[];
 
-      // Pull only the 3 data-flow indicators we care about
-      const vault   = allItems.find(i => i.id === "vault")   ?? PLACEHOLDER[0];
-      const watcher = allItems.find(i => i.id === "watcher") ?? PLACEHOLDER[1];
-      const phone   = allItems.find(i => i.id === "phone")   ?? PLACEHOLDER[2];
+      // Pull data-flow indicators
+      const vault        = allItems.find(i => i.id === "vault")         ?? PLACEHOLDER[0];
+      const watcher      = allItems.find(i => i.id === "watcher")       ?? PLACEHOLDER[1];
+      const phone        = allItems.find(i => i.id === "phone")         ?? PLACEHOLDER[2];
+      const sessionReset = allItems.find(i => i.id === "session-reset") ?? PLACEHOLDER[4];
+      const taskState    = allItems.find(i => i.id === "task-state")    ?? PLACEHOLDER[5];
 
       // Hermes Memory from dedicated endpoint
       let memItem: HealthItem = { id: "hermes-memory", label: "Hermes Memory", status: "unknown", detail: "checking…", updatedAt: null };
@@ -86,10 +90,12 @@ export function VaultStatusBar() {
       const renamed = (item: HealthItem, label: string): HealthItem => ({ ...item, label });
 
       setItems([
-        renamed(vault,   "Obsidian Sync"),
-        renamed(watcher, "Telegram → Vault"),
-        renamed(phone,   "Phone → Vault"),
+        renamed(vault,        "Obsidian Sync"),
+        renamed(watcher,      "Telegram → Vault"),
+        renamed(phone,        "Phone → Vault"),
         memItem,
+        renamed(sessionReset, "Session Reset"),
+        renamed(taskState,    "Task State"),
       ]);
       setLastFetch(new Date());
     } catch {
@@ -134,7 +140,7 @@ export function VaultStatusBar() {
         VAULT & HERMES STATUS
       </span>
 
-      {/* 4 indicators */}
+      {/* 6 indicators */}
       {items.map((item, i) => (
         <div
           key={item.id}

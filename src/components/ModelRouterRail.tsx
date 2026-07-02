@@ -54,46 +54,6 @@ function Spinner() {
   return <span style={{ display:"inline-block", width:11, height:11, border:"2px solid rgba(255,255,255,0.15)", borderTopColor:"#fff", borderRadius:"50%", animation:"spin 0.7s linear infinite", verticalAlign:"middle" }} />;
 }
 
-// ─── AgentsTile — mini inline component for agents count ────────────────────
-function AgentsTile() {
-  const [ruflo, setRuflo] = useState<{
-    online?: boolean;
-    activeAgents?: number;
-    totalAgents?: number;
-    agents?: Array<{ status: string }>;
-  } | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      try {
-        const r = await fetch("/api/ruflo", { cache: "no-store" });
-        if (r.ok && mounted) setRuflo(await r.json());
-      } catch { /* silent */ }
-    }
-    void load();
-    const iv = setInterval(load, 30_000);
-    return () => { mounted = false; clearInterval(iv); };
-  }, []);
-
-  const agents = ruflo?.agents ?? [];
-  const active = ruflo?.activeAgents ?? agents.filter(a => a.status === "running").length;
-  const total  = ruflo?.totalAgents ?? agents.length;
-  const isOffline = ruflo?.online === false;
-  const dotColor = isOffline ? "#ef4444" : "#22c55e";
-  const idleCount = agents.filter(a => a.status === "idle").length;
-
-  return (
-    <>
-      <div style={{ fontSize: 15, fontWeight: 700, color: dotColor, fontFamily: "monospace", lineHeight: 1 }}>
-        {ruflo ? `${active}/${total}` : "—"}
-      </div>
-      <div style={{ fontSize: 9, color: "#4b5563", marginTop: 2 }}>
-        {isOffline ? "Ruflo offline" : ruflo ? `${idleCount} idle` : "loading…"}
-      </div>
-    </>
-  );
-}
 
 export function ModelRouterRail() {
   const [cost, setCost]       = useState<CostData | null>(null);
@@ -304,7 +264,8 @@ export function ModelRouterRail() {
           {/* Agents Online */}
           <div style={{ flex:1, background:"#0d1117", border:"1px solid #1f2937", borderRadius:7, padding:"7px 10px" }}>
             <div style={{ fontSize:9, color:"#6b7280", textTransform:"uppercase" as const, letterSpacing:"0.1em", marginBottom:3 }}>Agents Online</div>
-            <AgentsTile />
+            <div style={{ fontSize:15, fontWeight:700, color:"#22c55e", fontFamily:"monospace", lineHeight:1 }}>—</div>
+            <div style={{ fontSize:9, color:"#4b5563", marginTop:2 }}>hermes workers</div>
           </div>
         </div>
       </div>
