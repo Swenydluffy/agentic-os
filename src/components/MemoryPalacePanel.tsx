@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BackButton } from "@/components/BackButton";
 
 interface MemoryResult {
   filename: string;
@@ -11,7 +12,8 @@ interface MemoryResponse {
   raw?: string;
 }
 
-export function MemoryPalacePanel() {
+interface MemoryPalacePanelProps { onBack?: () => void; }
+export function MemoryPalacePanel({ onBack }: MemoryPalacePanelProps = {}){
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MemoryResult[]>([]);
   const [rawOutput, setRawOutput] = useState<string | null>(null);
@@ -191,6 +193,7 @@ export function MemoryPalacePanel() {
 
   return (
     <div style={styles.panel}>
+      {onBack && <div style={{padding:"10px 20px 0"}}><BackButton onBack={onBack} /></div>}
       <div style={styles.title}>🧠 Memory Palace</div>
 
       <div style={styles.searchRow}>

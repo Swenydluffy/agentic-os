@@ -6,6 +6,7 @@ import { ScrollText, Clock, Bot, Cpu, RefreshCw, CheckCircle2, XCircle, CircleDa
 import { ACCENT, Spinner, ErrorState, VaultSaveBadge, useVaultSave } from "@/components/panel-ui";
 import { localDateStamp } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 interface CronLog {
   name: string;
@@ -133,7 +134,8 @@ const STATUS_ICON = {
   paused:  <CircleDashed size={13} style={{color: "#facc15"}} />,
 } as const;
 
-export function LogsPanel() {
+interface LogsPanelProps { onBack?: () => void; }
+export function LogsPanel({ onBack }: LogsPanelProps = {}) {
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [data, setData] = useState<LogsData | null>(null);
@@ -163,7 +165,9 @@ export function LogsPanel() {
   }, [fetchData]);
 
   return (
-    <div className="panel mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
+    <>
+      {onBack && <div style={{padding: "12px 20px 0"}}><BackButton onBack={onBack} /></div>}
+      <div className="panel mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
         <div className="flex items-center gap-3">
@@ -267,7 +271,8 @@ export function LogsPanel() {
           <SystemTab system={data.system} />
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

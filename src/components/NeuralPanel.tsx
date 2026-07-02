@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 const ACCENT = "#2dd4bf";
 
@@ -100,9 +101,10 @@ function relativeTime(isoDate: string | null): string {
 
 interface NeuralPanelProps {
   fullPage?: boolean;
+  onBack?: () => void;
 }
 
-export function NeuralPanel({ fullPage = false }: NeuralPanelProps) {
+export function NeuralPanel({ fullPage = false, onBack }: NeuralPanelProps) {
   const [load, setLoad] = useState<LoadState>({ state: "loading" });
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -130,6 +132,7 @@ export function NeuralPanel({ fullPage = false }: NeuralPanelProps) {
   return (
     <div className={cn("panel flex flex-col overflow-hidden", fullPage ? "h-full" : "relative h-full")}>
       {/* Header */}
+      {onBack && <div className="px-5 pt-4"><BackButton onBack={onBack} /></div>}
       <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
         <div className="flex items-center gap-2">
           <span

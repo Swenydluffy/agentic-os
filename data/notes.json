@@ -68,7 +68,7 @@
     "category": "General",
     "created_at": "2026-07-01T14:35:21.178Z",
     "source": "mc",
-    "done": false,
+    "done": true,
     "archived": false
   },
   {
@@ -94,6 +94,24 @@
     "text": "\"Hermes, pull the token usage breakdown from OpenRouter for yesterday June 30 vs today July 1 — by hour if possible. I need to understand why yesterday cost $300+ and today is at $6.60. Show actual token counts, not estimates. What was burning tokens yesterday that isn't today?\"",
     "category": "To-Do",
     "created_at": "2026-07-01T14:44:57.071Z",
+    "source": "mc",
+    "done": true,
+    "archived": false
+  },
+  {
+    "id": "e8e2a70c-c374-4462-a3e4-cb33b304d11a",
+    "text": "Hermes, look up every hex ID cron job in the logs panel and tell me what each one actually does. Also tell me why PT Network Email Queue Daily and Morning Briefing are showing RED. List all hex IDs with their actual function names.",
+    "category": "General",
+    "created_at": "2026-07-02T20:29:56.210Z",
+    "source": "mc",
+    "done": false,
+    "archived": false
+  },
+  {
+    "id": "cbde46fa-d51b-492c-b247-2bf55c775259",
+    "text": "The practical solution for your 27-inch display:  Keep Claude.ai open in a separate window for anything requiring file attachments and screen capture. Use the MC AI Console for quick questions, model switching, and Hermes tasks. They serve different purposes. The MC AI Console's strength is model switching and integration with Hermes — not file handling. Claude.ai's strength is file handling and screen capture. Right now Hermes is still working on the System tab fix. When he reports back let's finish that, commit everything, and then we can plan what to build next for MC.",
+    "category": "Projects",
+    "created_at": "2026-07-02T20:58:46.334Z",
     "source": "mc",
     "done": false,
     "archived": false

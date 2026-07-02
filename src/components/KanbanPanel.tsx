@@ -6,6 +6,7 @@ import { KanbanSquare, Plus, Trash2, X, GripVertical } from "lucide-react";
 import { AGENTS } from "@/lib/agents";
 import { saveVaultMarkdown, type VaultSaveResult } from "@/lib/vault-client";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 const ACCENT = "#60a5fa";
 const STORAGE_KEY = "agentic-os:kanban";
@@ -99,7 +100,8 @@ function boardToMarkdown(cards: Card[]): string {
   return lines.join("\n");
 }
 
-export function KanbanPanel() {
+interface KanbanPanelProps { onBack?: () => void; }
+export function KanbanPanel({ onBack }: KanbanPanelProps = {}){
   const [cards, setCards] = useState<Card[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [composerColumn, setComposerColumn] = useState<ColumnId | null>(null);
@@ -178,6 +180,7 @@ export function KanbanPanel() {
 
   return (
     <div className="panel flex h-full flex-col overflow-hidden">
+      {onBack && <div style={{padding:"10px 20px 0"}}><BackButton onBack={onBack} /></div>}
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
         <div className="flex items-center gap-3">

@@ -33,6 +33,7 @@ import {
 import { Markdown } from "@/components/Markdown";
 import { MicButton, type MicHandle } from "@/components/MicButton";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 /** Gold accent for the Notebook section (matches the sidebar entry). */
 const ACCENT = "#fde047";
@@ -159,7 +160,8 @@ function normalizeAssets(data: unknown): AssetFile[] {
 
 /* -------------------------------- component -------------------------------- */
 
-export function NotebookPanel() {
+interface NotebookPanelProps { onBack?: () => void; }
+export function NotebookPanel({ onBack }: NotebookPanelProps = {}){
   const [tab, setTab] = useState<TabId>("library");
   const [notebooks, setNotebooks] = useState<Load<Notebook>>({ state: "idle" });
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -350,6 +352,7 @@ export function NotebookPanel() {
 
   return (
     <div className="panel mx-auto flex h-full max-w-4xl flex-col overflow-hidden">
+      {onBack && <div style={{padding:"10px 20px 0"}}><BackButton onBack={onBack} /></div>}
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
         <div className="flex items-center gap-3">

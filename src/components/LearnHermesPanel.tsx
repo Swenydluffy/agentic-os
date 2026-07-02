@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { BackButton } from "@/components/BackButton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Section {
@@ -13,6 +14,7 @@ interface Section {
 export interface LearnHermesPanelProps {
   onNavigate?: (id: string) => void;
   onPopulateChat?: (text: string) => void;
+  onBack?: () => void;
 }
 
 // ─── Quick Action button definitions ─────────────────────────────────────────
@@ -591,7 +593,7 @@ const SECTIONS: Section[] = [
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
 
-export function LearnHermesPanel({ onNavigate, onPopulateChat }: LearnHermesPanelProps) {
+export function LearnHermesPanel({ onNavigate, onPopulateChat, onBack }: LearnHermesPanelProps) {
   const [activeId, setActiveId] = useState<string>("actions");
   const active = SECTIONS.find(s => s.id === activeId);
 
@@ -602,6 +604,7 @@ export function LearnHermesPanel({ onNavigate, onPopulateChat }: LearnHermesPane
       border: "1px solid #1f2937", overflow: "hidden",
       fontFamily: "system-ui, -apple-system, sans-serif",
     }}>
+      {onBack && <div style={{position:"absolute",top:12,left:12,zIndex:10}}><BackButton onBack={onBack} /></div>}
       {/* Left nav */}
       <div style={{
         width: 220, flexShrink: 0,

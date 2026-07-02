@@ -21,6 +21,7 @@ import {
   useVaultSave,
 } from "@/components/panel-ui";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 interface Workflow {
   id: string;
@@ -109,7 +110,8 @@ function workflowsMarkdown(workflows: Workflow[]): string {
   return lines.join("\n");
 }
 
-export function WorkflowsPanel() {
+interface WorkflowsPanelProps { onBack?: () => void; }
+export function WorkflowsPanel({ onBack }: WorkflowsPanelProps = {}){
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
@@ -190,6 +192,7 @@ export function WorkflowsPanel() {
 
   return (
     <div className="panel mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
+      {onBack && <div style={{padding:"10px 20px 0"}}><BackButton onBack={onBack} /></div>}
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
         <div className="flex items-center gap-3">

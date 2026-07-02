@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Search, RefreshCw, FolderOpen, FileText, ArrowLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 const ACCENT = "#a78bfa"; // purple for Obsidian
 
@@ -55,7 +56,8 @@ function fmtSize(bytes: number): string {
 // Pinned Knowledge nodes shown first
 const PINNED_FOLDERS = ["Knowledge"];
 
-export function ObsidianPanel() {
+interface ObsidianPanelProps { onBack?: () => void; }
+export function ObsidianPanel({ onBack }: ObsidianPanelProps = {}){
   const [notes, setNotes] = useState<NoteEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -134,6 +136,7 @@ export function ObsidianPanel() {
   if (selectedNote) {
     return (
       <div className="panel flex h-full flex-col overflow-hidden">
+      {onBack && <div style={{padding:"10px 20px 0"}}><BackButton onBack={onBack} /></div>}
         <header className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
           <button
             type="button"

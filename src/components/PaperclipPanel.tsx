@@ -10,6 +10,7 @@ import {
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -194,12 +195,14 @@ function TasksTab() {
 /*  Main panel                                                          */
 /* ------------------------------------------------------------------ */
 
-export function PaperclipPanel() {
+interface PaperclipPanelProps { onBack?: () => void; }
+export function PaperclipPanel({ onBack }: PaperclipPanelProps = {}){
   const [tab, setTab] = useState<Tab>("company");
   const status = usePaperclipStatus();
 
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto">
+      {onBack && <BackButton onBack={onBack} />}
 
       {/* ── Header ── */}
       <div className="flex items-center gap-3">

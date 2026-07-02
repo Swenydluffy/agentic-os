@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { KeyRound, RefreshCw, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 const ACCENT = "#fbbf24";
 
@@ -48,7 +49,8 @@ const REASON_STATUS: Record<HealthReason, { label: string; color: string; pulse:
   untested: { label: "No health endpoint", color: "var(--color-ink-faint)", pulse: false },
 };
 
-export function SecretsPanel() {
+interface SecretsPanelProps { onBack?: () => void; }
+export function SecretsPanel({ onBack }: SecretsPanelProps = {}) {
   const [load, setLoad] = useState<LoadState>({ state: "loading" });
 
   const refresh = useCallback(async () => {
@@ -75,6 +77,7 @@ export function SecretsPanel() {
 
   return (
     <div className="panel mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
+      {onBack && <div style={{padding:"10px 20px 0"}}><BackButton onBack={onBack} /></div>}
       <header className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
         <span
           className="flex h-10 w-10 items-center justify-center rounded-xl"

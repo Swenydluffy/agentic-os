@@ -42,6 +42,7 @@ import NotesPanel from "@/components/NotesPanel";
 import { LearnHermesPanel } from "@/components/LearnHermesPanel";
 import { CalendarPanel } from "@/components/CalendarPanel";
 import { CommandPalette } from "@/components/CommandPalette";
+import { BackButton } from "@/components/BackButton";
 
 function drift(seed: number, n = 24, base = 50, range = 30) {
   const arr: number[] = [];
@@ -169,13 +170,13 @@ export default function Page() {
               in-flight state (chat, routing, board) survives nav switches.
               Notebook is notebooklm-mcp-backed and synced to the Obsidian vault. */}
           <div className={view === "notebook" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <NotebookPanel />
+            <NotebookPanel onBack={() => setActiveNav("dashboard")} />
           </div>
           <div className={view === "router" ? "h-full p-4 lg:p-6" : "hidden"}>
             <ParetoRouterPanel />
           </div>
           <div className={view === "kanban" ? "h-full p-4 lg:p-6" : "hidden"}>
-            <KanbanPanel />
+            <KanbanPanel onBack={() => setActiveNav("dashboard")} />
           </div>
 
           {/* X (Twitter) Search — recent-search against the X API v2.
@@ -189,7 +190,7 @@ export default function Page() {
               secrets are read (and providers probed) only on demand. */}
           {view === "secrets" && (
             <div className="h-full p-4 lg:p-6">
-              <SecretsPanel />
+              <SecretsPanel onBack={() => setActiveNav("dashboard")} />
             </div>
           )}
 
@@ -203,7 +204,7 @@ export default function Page() {
 
           {view === "neurosync" && (
             <div className="h-full p-4 lg:p-6">
-              <NeuralPanel fullPage />
+              <NeuralPanel fullPage onBack={() => setActiveNav("dashboard")} />
             </div>
           )}
 
@@ -211,13 +212,15 @@ export default function Page() {
               Mounted on demand so the status probe runs only when opened. */}
           {view === "paperclip" && (
             <div className="h-full p-4 lg:p-6">
-              <PaperclipPanel />
+              <PaperclipPanel onBack={() => setActiveNav("dashboard")} />
             </div>
           )}
 
           {/* Obsidian launcher — opens native Obsidian app on Mac */}
           {view === "obsidian" && (
-            <div className="panel flex h-full flex-col items-center justify-center gap-6">
+            <div className="panel flex h-full flex-col gap-6">
+              <BackButton onBack={() => setActiveNav("dashboard")} />
+              <div className="flex flex-col items-center justify-center flex-1 gap-6">
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: "#7c3aed22" }}>
                   <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
@@ -250,6 +253,7 @@ export default function Page() {
               <p className="font-mono text-[11px] text-[var(--color-ink-faint)]">
                 Vault: ~/Documents/Omi
               </p>
+              </div>
             </div>
           )}
 
@@ -258,17 +262,17 @@ export default function Page() {
               opened. */}
           {view === "workflows" && (
             <div className="h-full p-4 lg:p-6">
-              <WorkflowsPanel />
+              <WorkflowsPanel onBack={() => setActiveNav("dashboard")} />
             </div>
           )}
           {view === "memory" && (
             <div className="h-full p-4 lg:p-6">
-              <MemoryPalacePanel />
+              <MemoryPalacePanel onBack={() => setActiveNav("dashboard")} />
             </div>
           )}
           {view === "logs" && (
             <div className="h-full p-4 lg:p-6">
-              <LogsPanel />
+              <LogsPanel onBack={() => setActiveNav("dashboard")} />
             </div>
           )}
 
@@ -293,6 +297,7 @@ export default function Page() {
           {view === "security" && (
             <div className="h-full p-4 lg:p-6">
               <div className="panel h-full">
+                <BackButton onBack={() => setActiveNav("dashboard")} />
                 <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
                   <span className="text-2xl">📹</span>
                   <h2 className="font-display text-lg font-semibold text-white">Security Cameras</h2>
@@ -374,6 +379,7 @@ export default function Page() {
           {view === "mindinsurance" && (
             <div className="h-full p-4 lg:p-6">
               <div className="panel h-full flex flex-col" style={{borderColor:"rgba(139,92,246,0.2)"}}>
+                <BackButton onBack={() => setActiveNav("dashboard")} />
                 <div className="flex items-center gap-3 border-b border-white/5 px-5 py-4">
                   <span className="text-2xl">🧠</span>
                   <div>
@@ -565,7 +571,7 @@ export default function Page() {
                   <span className="text-2xl">🆕</span>
                   <h2 className="font-display text-lg font-semibold text-white">What's New</h2>
                 </div>
-                <LogsPanel />
+                <LogsPanel onBack={() => setActiveNav("dashboard")} />
               </div>
             </div>
           )}
@@ -578,7 +584,7 @@ export default function Page() {
 
           {view === "learnhermes" && (
             <div className="h-full p-4 lg:p-6">
-              <LearnHermesPanel
+              <LearnHermesPanel onBack={() => setActiveNav("dashboard")}
                 onNavigate={setActiveNav}
                 onPopulateChat={(text) => {
                   const ta = document.getElementById('ai-console-textarea') as HTMLTextAreaElement | null;

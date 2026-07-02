@@ -12,6 +12,7 @@ import {
   useVaultSave,
 } from "@/components/panel-ui";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 interface MemoryCard {
   id: string;
@@ -48,7 +49,8 @@ function memoryMarkdown(heading: string, tag: string, cards: MemoryCard[]): stri
   return lines.join("\n");
 }
 
-export function MemoryPanel() {
+interface MemoryPanelProps { onBack?: () => void; }
+export function MemoryPanel({ onBack }: MemoryPanelProps = {}){
   const [phase, setPhase] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [profile, setProfile] = useState<MemoryCard[]>([]);
@@ -109,6 +111,7 @@ export function MemoryPanel() {
 
   return (
     <div className="panel mx-auto flex h-full max-w-3xl flex-col overflow-hidden">
+      {onBack && <div style={{padding:"10px 20px 0"}}><BackButton onBack={onBack} /></div>}
       {/* Header */}
       <header className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4">
         <div className="flex items-center gap-3">
