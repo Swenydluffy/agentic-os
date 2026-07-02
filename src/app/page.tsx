@@ -10,8 +10,6 @@ import { GoalsPanel } from "@/components/GoalsPanel";
 import { JournalPanel } from "@/components/JournalPanel";
 import { GuidePanel } from "@/components/GuidePanel";
 import { HermesPanel } from "@/components/HermesPanel";
-import { HermesTelegramPanel } from "@/components/HermesTelegramPanel";
-import { TelegramThreadPanel } from "@/components/TelegramThreadPanel";
 import { HermesMCPanel } from "@/components/HermesMCPanel";
 import { ResizableDivider } from "@/components/ResizableDivider";
 import { ComingSoon } from "@/components/ComingSoon";
@@ -623,7 +621,6 @@ export default function Page() {
 function WorkspaceLayout({ selectedAgent, onNavigate }: { selectedAgent?: string | null; onNavigate: (id: string) => void }) {
   // Panel widths as flex values (pixels). Defaults tuned for a 27" screen.
   const [railW,  setRailW]  = React.useState(320);
-  const [tgW,    setTgW]    = React.useState(0);   // 0 = use flex:1
   const [mcW,    setMcW]    = React.useState(0);
   const [clW,    setClW]    = React.useState(0);
 
@@ -670,17 +667,6 @@ function WorkspaceLayout({ selectedAgent, onNavigate }: { selectedAgent?: string
             <HermesMCPanel />
           </div>
 
-          <ResizableDivider onDrag={d => {
-            setMcW(w => {
-              const cur = w || 400;
-              return clamp(cur + d, 280, 900);
-            });
-          }} />
-
-          {/* Panel 3: Telegram — Medellin Lodging Agent */}
-          <div style={{ width: tgW || undefined, flex: tgW ? undefined : 1, minWidth: 280, overflow:"hidden", display:"flex", flexDirection:"column" }}>
-            <TelegramThreadPanel />
-          </div>
 
         </div>
       </div>
