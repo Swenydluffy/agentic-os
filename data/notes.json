@@ -115,5 +115,23 @@
     "source": "mc",
     "done": false,
     "archived": false
+  },
+  {
+    "id": "b59db041-cd25-4b1f-98c8-1d0243fb6583",
+    "text": "And yes — Hurricane Monitor should be deleted. It was on the audit list and we never pulled the trigger. Once Hermes finishes the STOP button build, next prompt to him is:  Delete Hurricane Monitor cron job Change brad-context-regenerator from every 5 min to every 30 min Change Mission Board Auto-Updater from every 15 min to every hour  That reduces unnecessary token burn going forward. Let Hermes finish. Paste what he comes back with.",
+    "category": "To-Do",
+    "created_at": "2026-07-03T02:23:58.277Z",
+    "source": "mc",
+    "done": false,
+    "archived": false
+  },
+  {
+    "id": "eed9b465-c895-485b-bc11-a8e0ec88a1ec",
+    "text": "Before we close out — here's what's still on your list: Brad's to-do list:  ptrenewal.com — nameservers at registrar Resend domain verification — Cloudflare DNS for wynneops.com ptnetwork.clinicpt.com — Cloudflare CNAME AWS SES — verify ptrenewal.org, DKIM, SMTP creds Stripe keys — fyzical-api/.env PTCAREERS_ADMIN_KEY — fyzical-api/.env STRIPE_PRICE_FAMILY_ADDON — Mind Insurance .env.local Seagate Time Machine — plug in and set up Twilio credentials — voice bridge .env Backblaze B2 account — for VPS backups Real voice call test — call (659) 235-3898 GitHub SSH key on Mac — so Hermes can push to git  Hermes still needs to do:  Delete Hurricane Monitor cron job Reduce brad-context-regenerator from every 5 min to every 30 min Reduce Mission Board Auto-Updater from every 15 min to every hour Commit and push MC changes to GitHub",
+    "category": "To-Do",
+    "created_at": "2026-07-03T02:25:47.033Z",
+    "source": "mc",
+    "done": false,
+    "archived": false
   }
 ]

@@ -110,7 +110,6 @@ export function ModelRouterRail() {
       const d = await r.json();
       if (d.ok !== false) {
         setModel(d); setJustSwitched(id);
-        setModelId(id); // sync TopBar badge
         setTimeout(fetchModel, 500);
         setTimeout(() => setJustSwitched(null), 5000);
       }

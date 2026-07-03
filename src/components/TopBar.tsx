@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Mic, MicOff, ChevronDown, Circle } from "lucide-react";
 import { getModelOption } from "@/lib/models";
+import { StopButton } from "./StopButton";
 import { useEffect, useRef, useState } from "react";
 import { useActiveModel } from "@/lib/useActiveModel";
 
@@ -360,6 +361,9 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
           <span style={{ fontFamily: "inherit", fontSize: 10, fontWeight: 500, color: "#e5e7eb", textTransform: "uppercase", letterSpacing: "0.06em" }}>{date}</span>
         </div>
       </div>
+
+      {/* Emergency PANIC button — far right */}
+      <StopButton />
     </motion.header>
   );
 }
