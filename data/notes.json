@@ -60,7 +60,7 @@
     "created_at": "2026-07-01T13:03:40.987Z",
     "source": "mc",
     "done": true,
-    "archived": false
+    "archived": true
   },
   {
     "id": "d7aa9557-3a63-4efc-b145-d86fed115494",
@@ -69,7 +69,7 @@
     "created_at": "2026-07-01T14:35:21.178Z",
     "source": "mc",
     "done": true,
-    "archived": false
+    "archived": true
   },
   {
     "id": "5fb43d83-6710-4223-8e47-a5d94238479f",
@@ -87,7 +87,7 @@
     "created_at": "2026-07-01T14:43:33.467Z",
     "source": "mc",
     "done": true,
-    "archived": false
+    "archived": true
   },
   {
     "id": "6ac6f8c9-de0c-4279-9adb-f2742f948ce6",
@@ -96,7 +96,7 @@
     "created_at": "2026-07-01T14:44:57.071Z",
     "source": "mc",
     "done": true,
-    "archived": false
+    "archived": true
   },
   {
     "id": "e8e2a70c-c374-4462-a3e4-cb33b304d11a",
@@ -104,8 +104,8 @@
     "category": "General",
     "created_at": "2026-07-02T20:29:56.210Z",
     "source": "mc",
-    "done": false,
-    "archived": false
+    "done": true,
+    "archived": true
   },
   {
     "id": "cbde46fa-d51b-492c-b247-2bf55c775259",
