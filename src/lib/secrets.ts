@@ -32,7 +32,10 @@ export type ServiceId =
   | "xai"
   | "groq"
   | "deepseek"
-  | "openrouter";
+  | "openrouter"
+  | "telegram"
+  | "cloudflare"
+  | "github";
 
 /** Why a key is (or isn't) reported active — mirrors the Models panel reasons. */
 export type HealthReason =
@@ -103,12 +106,32 @@ function bearerModelsProbe(url: string) {
  * "X Twitter Keys" don't get pulled in.
  */
 const PROVIDERS: Record<ServiceId, ProviderDef> = {
+  telegram: {
+    label: "Telegram Bot API",
+    color: "#0088cc",
+    match: (t) => t.includes("telegram"),
+    probe: (key, signal) =>
+      fetch(`https://api.telegram.org/bot${key}/getMe`, {
+        signal,
+        cache: "no-store",
+      }),
+
   openrouter: {
     label: "OpenRouter",
     color: "#a78bfa",
     match: (t) => t.includes("openrouter"),
     probe: bearerModelsProbe("https://openrouter.ai/api/v1/models"),
   },
+  cloudflare: {
+    label: "Cloudflare",
+    color: "#f38020",
+    match: (t) => t.includes("cloudflare"),
+    probe: (key, signal) =>
+      fetch("https://api.cloudflare.com/client/v4/user/tokens/verify", {
+        headers: { Authorization: `Bearer ${key}` },
+        signal,
+        cache: "no-store",
+      }),
   anthropic: {
     label: "Anthropic",
     color: "#d97757",
@@ -132,6 +155,16 @@ const PROVIDERS: Record<ServiceId, ProviderDef> = {
         cache: "no-store",
       }),
   },
+  github: {
+    label: "GitHub",
+    color: "#333333",
+    match: (t) => t.includes("github") && !t.includes("ssh"),
+    probe: (key, signal) =>
+      fetch("https://api.github.com/user", {
+        headers: { Authorization: `token ${key}` },
+        signal,
+        cache: "no-store",
+      }),
   openai: {
     label: "OpenAI",
     color: "#10a37f",
@@ -160,6 +193,9 @@ const PROVIDERS: Record<ServiceId, ProviderDef> = {
 
 /** Stable order to try matchers in (priority: OpenRouter before OpenAI/xAI). */
 const MATCH_ORDER: ServiceId[] = [
+  "telegram",
+  "cloudflare",
+  "github",
   "openrouter",
   "anthropic",
   "openai",
